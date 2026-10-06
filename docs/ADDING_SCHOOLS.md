@@ -1,8 +1,24 @@
 # Adding schools to the registry
 
 The registry (`registry/schools.yaml`) holds pointers only: a school's IPEDS UnitID and the URL of its
-own Common Data Set. The app downloads the latest version of this file from GitHub at startup, so a
-fix pushed to `main` reaches every installed copy without a rebuild. Target: 100–150 schools.
+own Common Data Set. Target: 100–150 schools.
+
+Because this repository is private, the app cannot read the file from here. When a change to
+`registry/schools.yaml` lands on `main`, `.github/workflows/registry-sync.yml` validates it and copies
+it to the public repo
+[`mpromisel002/CollegeIQDashboard-registry`](https://github.com/mpromisel002/CollegeIQDashboard-registry),
+which every installed copy downloads at startup. A fix therefore reaches users without a rebuild.
+Always edit the file here, never in the public repo. If the download fails, the app uses the copy
+bundled into the exe and shows a banner.
+
+### One-time setup
+
+1. Create the **public**, empty repository `mpromisel002/CollegeIQDashboard-registry`.
+2. Create a fine-grained personal access token (GitHub → Settings → Developer settings) limited to
+   that one repository with **Contents: Read and write**.
+3. In this repository: Settings → Secrets and variables → Actions → new secret
+   `REGISTRY_SYNC_TOKEN` with that token.
+4. Run *Actions → Registry sync → Run workflow* once to publish the current list.
 
 ## Steps
 

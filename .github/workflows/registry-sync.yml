@@ -1,0 +1,70 @@
+name: Registry sync
+
+# The app repo is private, so installed copies cannot read registry/schools.yaml from it.
+# This mirrors the file (pointers only: UnitIDs + CDS URLs) to the public repo the app reads:
+#   https://github.com/mpromisel002/CollegeIQDashboard-registry
+# Needs a repository secret REGISTRY_SYNC_TOKEN: a fine-grained personal access token with
+# "Contents: Read and write" on that public repo only.
+on:
+  push:
+    branches: [main]
+    paths: [registry/schools.yaml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: registry-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      PUBLIC_REPO: mpromisel002/CollegeIQDashboard-registry
+      HAS_TOKEN: ${{ secrets.REGISTRY_SYNC_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate the registry before publishing
+        env:
+          PYTHONPATH: src
+        run: |
+          pip install -q PyYAML==6.0.3 pydantic==2.13.5 httpx==0.28.1 tenacity==9.1.4 cachetools==7.2.1 certifi
+          python -c "from cfa.sources.registry import load_bundled; r = load_bundled(); print(len(r.schools), 'schools OK')"
+      - name: Missing token
+        if: env.HAS_TOKEN != 'true'
+        run: |
+          echo "::error::REGISTRY_SYNC_TOKEN is not set; the public registry was not updated."
+          exit 1
+      - name: Publish to the public registry repo
+        if: env.HAS_TOKEN == 'true'
+        env:
+          TOKEN: ${{ secrets.REGISTRY_SYNC_TOKEN }}
+        run: |
+          git clone --depth 1 "https://x-access-token:${TOKEN}@github.com/${PUBLIC_REPO}.git" public 2>/dev/null \
+            || { mkdir public && cd public && git init -q -b main \
+                 && git remote add origin "https://x-access-token:${TOKEN}@github.com/${PUBLIC_REPO}.git" && cd ..; }
+          cp registry/schools.yaml public/schools.yaml
+          cat > public/README.md <<'MD'
+          # College Fit Advisor — school registry
+
+          Read by the College Fit Advisor desktop app at startup. It lists pointers only: each school's
+          IPEDS UnitID and the URL of the Common Data Set the school publishes on its own website.
+          No college data is stored here.
+
+          This repository is updated automatically. Do not edit it directly; changes are made in the
+          app's (private) repository and mirrored here.
+          MD
+          sed -i 's/^          //' public/README.md
+          cd public
+          git config user.name "registry-sync[bot]"
+          git config user.email "registry-sync@users.noreply.github.com"
+          git add schools.yaml README.md
+          if git diff --cached --quiet; then echo "Public registry already up to date."; exit 0; fi
+          git commit -q -m "Sync schools.yaml from ${GITHUB_REPOSITORY}@${GITHUB_SHA::7}"
+          git push -q origin HEAD:main
+          echo "Published to https://github.com/${PUBLIC_REPO}"

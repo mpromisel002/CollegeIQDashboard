@@ -336,3 +336,6 @@ A per-school free-text and tags field (e.g., "political lean: left-leaning per c
   - **Link-outs** without a registry URL open a site-restricted web search instead of a guessed URL.
   - Work was delivered on a single branch/PR (`claude/relaxed-davinci-536zjd`) rather than one PR per
     phase, as required by the session's branch rules.
+- v1.2 (2026-10-06): the app repo stays private, so `raw.githubusercontent.com` URLs into it return 404.
+  The registry is mirrored to the public repo `mpromisel002/CollegeIQDashboard-registry` by
+  `.github/workflows/registry-sync.yml`, and `REGISTRY_REMOTE_URL` points there.
