@@ -45,9 +45,21 @@ jobs:
         env:
           TOKEN: ${{ secrets.REGISTRY_SYNC_TOKEN }}
         run: |
-          git clone --depth 1 "https://x-access-token:${TOKEN}@github.com/${PUBLIC_REPO}.git" public 2>/dev/null \
-            || { mkdir public && cd public && git init -q -b main \
-                 && git remote add origin "https://x-access-token:${TOKEN}@github.com/${PUBLIC_REPO}.git" && cd ..; }
+          # Check what the token can do first, so a misconfigured secret gives a clear message.
+          code=$(curl -s -o perm.json -w '%{http_code}' -H "Authorization: Bearer ${TOKEN}" \
+                 -H "Accept: application/vnd.github+json" "https://api.github.com/repos/${PUBLIC_REPO}")
+          if [ "$code" != "200" ]; then
+            echo "::error::REGISTRY_SYNC_TOKEN was rejected for ${PUBLIC_REPO} (HTTP ${code}). The token may be expired, mistyped in the secret, or not granted access to that repository."
+            exit 1
+          fi
+          if ! python3 -c "import json,sys; sys.exit(0 if json.load(open('perm.json')).get('permissions',{}).get('push') else 1)"; then
+            echo "::error::REGISTRY_SYNC_TOKEN can read ${PUBLIC_REPO} but cannot write to it. Give the token 'Contents: Read and write' on that repository (fine-grained token) or the 'public_repo' scope (classic token), then update the secret."
+            exit 1
+          fi
+          git clone --depth 1 "https://github.com/${PUBLIC_REPO}.git" public 2>/dev/null \
+            || { mkdir public && cd public && git init -q -b main && cd ..; }
+          git -C public remote remove origin 2>/dev/null || true
+          git -C public remote add origin "https://x-access-token:${TOKEN}@github.com/${PUBLIC_REPO}.git"
           cp registry/schools.yaml public/schools.yaml
           cat > public/README.md <<'MD'
           # College Fit Advisor — school registry
