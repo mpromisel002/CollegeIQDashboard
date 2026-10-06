@@ -1,0 +1,29 @@
+{
+ "metadata": {
+  "page": 0,
+  "total": 1,
+  "per_page": 20
+ },
+ "results": [
+  {
+   "latest.student.size": 33227,
+   "latest.admissions.admission_rate.overall": 0.7665,
+   "latest.admissions.sat_scores.25th_percentile.critical_reading": 590,
+   "latest.admissions.sat_scores.75th_percentile.critical_reading": 690,
+   "latest.admissions.sat_scores.25th_percentile.math": 580,
+   "latest.admissions.sat_scores.75th_percentile.math": 710,
+   "latest.admissions.act_scores.25th_percentile.cumulative": 24,
+   "latest.admissions.act_scores.75th_percentile.cumulative": 31,
+   "latest.admissions.test_requirements": 5,
+   "latest.student.retention_rate.four_year.full_time": 0.8949,
+   "latest.completion.completion_rate_4yr_150nt": 0.7337,
+   "school.name": "The University of Alabama",
+   "school.city": "Tuscaloosa",
+   "school.state": "AL",
+   "school.zip": "35487-0100",
+   "school.school_url": "www.ua.edu/",
+   "school.locale": 12,
+   "id": 100751
+  }
+ ]
+}

@@ -1,0 +1,161 @@
+# College Fit Advisor source registry.
+#
+# POINTERS ONLY: IPEDS UnitIDs and URLs of each school's own Common Data Set document.
+# No college data lives here; the app downloads and parses each document at runtime.
+# See docs/ADDING_SCHOOLS.md. Validate changes with: python -m cfa.tools.validate_registry
+schema_version: 1
+schools:
+  # --- Heavy Greek life -------------------------------------------------------
+  - unitid: 100751
+    name: The University of Alabama
+    cds:
+      - year: "2025-2026"
+        url: https://oira.ua.edu/d/sites/all/files/reports26/CDS%202025-26%20FINAL%209Dec2025.pdf
+        format: pdf
+  - unitid: 221759
+    name: The University of Tennessee-Knoxville
+    cds:
+      - year: "2025-2026"
+        url: https://irsa.utk.edu/wp-content/uploads/sites/5/2026/07/CDS_2025-26_All__-1.pdf
+        format: pdf
+  - unitid: 221999
+    name: Vanderbilt University
+    cds:
+      - year: "2025-2026"
+        url: https://cdn.vanderbilt.edu/vu-wpfsx/wp-content/uploads/sites/70/2026/07/CDS_2025-2026.xlsx
+        format: xlsx
+  - unitid: 211291
+    name: Bucknell University
+    cds:
+      - year: "2025-2026"
+        url: https://www.bucknell.edu/sites/default/files/institutional-research/common_data_set_2025-26.pdf
+        format: pdf
+  - unitid: 217484
+    name: University of Rhode Island
+    cds:
+      - year: "2025-2026"
+        url: https://web.uri.edu/ir/wp-content/uploads/sites/276/CDS-PDF-2025-2026_fillablePDF.pdf
+        format: pdf
+  - unitid: 203845
+    name: Marietta College
+    cds:
+      - year: "2025-2026"
+        url: https://www.marietta.edu/sites/default/files/MC-CDS_2025-2026.xlsx
+        format: xlsx
+  - unitid: 157951
+    name: Western Kentucky University
+    cds:
+      - year: "2025-2026"
+        url: https://www.wku.edu/instres/documents/cds_2025_2026.pdf
+        format: pdf
+  # --- Large Big Ten / Big 12 publics -------------------------------------------
+  - unitid: 243780
+    name: Purdue University-Main Campus
+    cds:
+      - year: "2025-2026"
+        url: https://www.purdue.edu/idata/wp-content/uploads/2026/04/CDS-2025-2026.xlsx
+        format: xlsx
+  - unitid: 153658
+    name: University of Iowa
+    cds:
+      - year: "2025-2026"
+        url: https://provost.uiowa.edu/sites/provost.uiowa.edu/files/2026-04/CDS_2526.pdf
+        format: pdf
+  - unitid: 171100
+    name: Michigan State University
+    cds:
+      - year: "2025-2026"
+        url: https://ir.msu.edu/-/media/assets/ir/docs/cds/cds-2025-2026.pdf
+        format: pdf
+  - unitid: 214777
+    name: Pennsylvania State University-Main Campus
+    cds:
+      - year: "2025-2026"
+        url: https://opair.psu.edu/files/2026/06/UniversityPark_CDS_2025_2026.pdf
+        format: pdf
+  - unitid: 229115
+    name: Texas Tech University
+    cds:
+      - year: "2025-2026"
+        url: https://www.depts.ttu.edu/irim/CommonDataSets/TTU_CDS_2025-2026-10-2-26.pdf
+        format: pdf
+  - unitid: 201885
+    name: University of Cincinnati-Main Campus
+    cds:
+      - year: "2024-2025"
+        url: https://www.uc.edu/content/dam/refresh/provost-62/offices/ir/ir-web-24-25/2024%202025%20common%20data%20set%20clifton.pdf
+        format: pdf
+  - unitid: 100663
+    name: University of Alabama at Birmingham
+    cds:
+      - year: "2025-2026"
+        url: https://www.uab.edu/institutionaleffectiveness/images/documents/cds/CDS-2025-26.pdf
+        format: pdf
+  # --- Little or no Greek life -------------------------------------------------
+  - unitid: 141060
+    name: Spelman College
+    cds:
+      - year: "2025-2026"
+        url: https://www.spelman.edu/_1_Docs-and-Files/about/institutional-research/common-data-set/cds_2025-2026_spelman_college_1.26.2026.pdf
+        format: pdf
+  - unitid: 145336
+    name: Governors State University
+    cds:
+      - year: "2025-2026"
+        url: https://www.govst.edu/sites/default/files/2026-08/Common%20Data%20Set.pdf
+        format: pdf
+  - unitid: 225432
+    name: University of Houston-Downtown
+    cds:
+      - year: "2025-2026"
+        url: https://www.uhd.edu/documents/provost/ie/institutional-research/common-data-set/cds-2025-2026.pdf
+        format: pdf
+  - unitid: 366711
+    name: California State University-San Marcos
+    cds:
+      - year: "2025-2026"
+        url: https://www.csusm.edu/ipa/cds-files/cds-doc/cds_2025-2026.xlsx
+        format: xlsx
+  - unitid: 160904
+    name: Xavier University of Louisiana
+    cds:
+      - year: "2025-2026"
+        url: https://www.xula.edu/opira/cds_2025-2026_pdf_xavier-university-of-louisiana_final-irdswebsite.pdf
+        format: pdf
+  - unitid: 224147
+    name: Texas A&M University-Corpus Christi
+    cds:
+      - year: "2025-2026"
+        url: https://www.tamucc.edu/president/pir/cds_2025-2026-word_web.pdf
+        format: pdf
+  - unitid: 195003
+    name: Rochester Institute of Technology
+    cds:
+      - year: "2025-2026"
+        url: https://www.rit.edu/institutionalresearch/sites/rit.edu.institutionalresearch/files/documents/Common%20Data%20Set%20PDFs/RIT_CDS_2025_26_FINAL_20260603.pdf
+        format: pdf
+  # --- Mid-size publics and privates ---------------------------------------------
+  - unitid: 180489
+    name: The University of Montana
+    cds:
+      - year: "2025-2026"
+        url: https://www.umt.edu/institutional-research/documents/cds-pdf-2025-2026_pdf_template1.pdf
+        format: pdf
+  - unitid: 204909
+    name: Ohio Wesleyan University
+    cds:
+      - year: "2025-2026"
+        url: https://www.owu.edu/files/resources/cds-2025-2026-owu.pdf
+        format: pdf
+  - unitid: 233277
+    name: Radford University
+    cds:
+      - year: "2025-2026"
+        url: https://www.radford.edu/institutional-research/_documents/cds-2025.pdf
+        format: pdf
+  - unitid: 221740
+    name: The University of Tennessee-Chattanooga
+    cds:
+      - year: "2025-2026"
+        url: https://www.utc.edu/sites/default/files/2026-06/cds-2025-2026.pdf
+        format: pdf

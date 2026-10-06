@@ -1,0 +1,29 @@
+{
+ "metadata": {
+  "page": 0,
+  "total": 1,
+  "per_page": 20
+ },
+ "results": [
+  {
+   "latest.student.size": 7208,
+   "latest.admissions.admission_rate.overall": 0.0586,
+   "latest.admissions.sat_scores.25th_percentile.critical_reading": 730,
+   "latest.admissions.sat_scores.75th_percentile.critical_reading": 770,
+   "latest.admissions.sat_scores.25th_percentile.math": 770,
+   "latest.admissions.sat_scores.75th_percentile.math": 800,
+   "latest.admissions.act_scores.25th_percentile.cumulative": 34,
+   "latest.admissions.act_scores.75th_percentile.cumulative": 35,
+   "latest.admissions.test_requirements": 5,
+   "latest.student.retention_rate.four_year.full_time": 0.9634,
+   "latest.completion.completion_rate_4yr_150nt": 0.9354,
+   "school.name": "Vanderbilt University",
+   "school.city": "Nashville",
+   "school.state": "TN",
+   "school.zip": "37240",
+   "school.school_url": "www.vanderbilt.edu/",
+   "school.locale": 11,
+   "id": 221999
+  }
+ ]
+}
