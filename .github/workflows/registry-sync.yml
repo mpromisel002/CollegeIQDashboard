@@ -2,7 +2,7 @@ name: Registry sync
 
 # The app repo is private, so installed copies cannot read registry/schools.yaml from it.
 # This mirrors the file (pointers only: UnitIDs + CDS URLs) to the public repo the app reads:
-#   https://github.com/mpromisel002/CollegeIQDashboard-registry
+#   https://github.com/mpromisel002/mpromisel002-CollegeIQDashboard-registry
 # Needs a repository secret REGISTRY_SYNC_TOKEN: a fine-grained personal access token with
 # "Contents: Read and write" on that public repo only.
 on:
@@ -22,7 +22,7 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     env:
-      PUBLIC_REPO: mpromisel002/CollegeIQDashboard-registry
+      PUBLIC_REPO: mpromisel002/mpromisel002-CollegeIQDashboard-registry
       HAS_TOKEN: ${{ secrets.REGISTRY_SYNC_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4

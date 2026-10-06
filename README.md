@@ -59,7 +59,7 @@ src/cfa/            app.py, config.py, pipeline.py, aggregate.py, cache.py
   ui/               PySide6 window, results table, detail view, charts, settings
   tools/            validate_registry, live_smoke
 registry/schools.yaml   pointers only (UnitIDs + CDS URLs); mirrored to the public
-                        CollegeIQDashboard-registry repo the app reads (see docs/ADDING_SCHOOLS.md)
+                        mpromisel002-CollegeIQDashboard-registry repo the app reads (see docs/ADDING_SCHOOLS.md)
 tests/              unit, adapters (respx), parsers (real CDS samples), ui (pytest-qt)
 ```
 

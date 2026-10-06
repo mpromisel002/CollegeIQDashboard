@@ -59,7 +59,7 @@ Scorecard does not expose a data year for `latest.*`; badges show "latest".
 ## 3. Common Data Set (each school's own PDF/XLSX)
 
 Documents are listed in `registry/schools.yaml` (mirrored to the public
-`mpromisel002/CollegeIQDashboard-registry` repo, which the app reads) and downloaded into memory at runtime (25 MB cap;
+`mpromisel002/mpromisel002-CollegeIQDashboard-registry` repo, which the app reads) and downloaded into memory at runtime (25 MB cap;
 magic bytes and content type must match the registry's `format`; an HTML page in place of the file
 is reported as "link may have moved").
 

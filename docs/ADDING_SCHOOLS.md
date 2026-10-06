@@ -6,14 +6,14 @@ own Common Data Set. Target: 100–150 schools.
 Because this repository is private, the app cannot read the file from here. When a change to
 `registry/schools.yaml` lands on `main`, `.github/workflows/registry-sync.yml` validates it and copies
 it to the public repo
-[`mpromisel002/CollegeIQDashboard-registry`](https://github.com/mpromisel002/CollegeIQDashboard-registry),
+[`mpromisel002/mpromisel002-CollegeIQDashboard-registry`](https://github.com/mpromisel002/mpromisel002-CollegeIQDashboard-registry),
 which every installed copy downloads at startup. A fix therefore reaches users without a rebuild.
 Always edit the file here, never in the public repo. If the download fails, the app uses the copy
 bundled into the exe and shows a banner.
 
 ### One-time setup
 
-1. Create the **public**, empty repository `mpromisel002/CollegeIQDashboard-registry`.
+1. Create the **public** repository `mpromisel002/mpromisel002-CollegeIQDashboard-registry`.
 2. Create a fine-grained personal access token (GitHub → Settings → Developer settings) limited to
    that one repository with **Contents: Read and write**.
 3. In this repository: Settings → Secrets and variables → Actions → new secret
