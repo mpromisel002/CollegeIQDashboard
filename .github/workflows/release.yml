@@ -1,0 +1,47 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    env:
+      QT_QPA_PLATFORM: offscreen
+      CFA_NO_PROCESS_POOL: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - run: pip install -r requirements-dev.txt
+      - name: Tests
+        run: pytest -q
+      - name: Build exe
+        run: pyinstaller packaging/cfa.spec --noconfirm
+      - name: No test files in the build
+        shell: pwsh
+        run: |
+          $bad = Get-ChildItem dist/CollegeFitAdvisor -Recurse | Where-Object { $_.FullName -match '\\tests\\|fixtures' }
+          if ($bad) { $bad | ForEach-Object { $_.FullName }; exit 1 }
+      - name: Smoke-launch (--self-test)
+        shell: pwsh
+        env:
+          QT_QPA_PLATFORM: ""
+        run: |
+          $p = Start-Process -FilePath dist/CollegeFitAdvisor/CollegeFitAdvisor.exe -ArgumentList '--self-test' -Wait -PassThru
+          if ($p.ExitCode -ne 0) { Write-Error "self-test exit code $($p.ExitCode)"; exit 1 }
+      - name: Zip
+        shell: pwsh
+        run: Compress-Archive -Path dist/CollegeFitAdvisor -DestinationPath CollegeFitAdvisor-win64.zip
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: CollegeFitAdvisor-win64.zip
+          generate_release_notes: true
