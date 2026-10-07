@@ -52,10 +52,6 @@ jobs:
             echo "::error::REGISTRY_SYNC_TOKEN was rejected for ${PUBLIC_REPO} (HTTP ${code}). The token may be expired, mistyped in the secret, or not granted access to that repository."
             exit 1
           fi
-          if ! python3 -c "import json,sys; sys.exit(0 if json.load(open('perm.json')).get('permissions',{}).get('push') else 1)"; then
-            echo "::error::REGISTRY_SYNC_TOKEN can read ${PUBLIC_REPO} but cannot write to it. Give the token 'Contents: Read and write' on that repository (fine-grained token) or the 'public_repo' scope (classic token), then update the secret."
-            exit 1
-          fi
           git clone --depth 1 "https://github.com/${PUBLIC_REPO}.git" public 2>/dev/null \
             || { mkdir public && cd public && git init -q -b main && cd ..; }
           git -C public remote remove origin 2>/dev/null || true
@@ -78,5 +74,10 @@ jobs:
           git add schools.yaml README.md
           if git diff --cached --quiet; then echo "Public registry already up to date."; exit 0; fi
           git commit -q -m "Sync schools.yaml from ${GITHUB_REPOSITORY}@${GITHUB_SHA::7}"
-          git push -q origin HEAD:main
+          # The API above reports the account's rights, not the token's, so a read-only token
+          # is only detected here.
+          git push -q origin HEAD:main || {
+            echo "::error::REGISTRY_SYNC_TOKEN is valid but may not write to ${PUBLIC_REPO}. For a fine-grained token: Repository access must include that repository and Repository permissions > Contents must be 'Read and write'. For a classic token: enable the 'public_repo' scope. Then update the secret and re-run."
+            exit 1
+          }
           echo "Published to https://github.com/${PUBLIC_REPO}"
