@@ -45,11 +45,13 @@ jobs:
         env:
           TOKEN: ${{ secrets.REGISTRY_SYNC_TOKEN }}
         run: |
-          # Check what the token can do first, so a misconfigured secret gives a clear message.
+          # Pasted secrets often carry a trailing newline or spaces; GitHub tokens never contain whitespace.
+          TOKEN="$(printf '%s' "$TOKEN" | tr -d '[:space:]')"
+          # Check the token first, so a misconfigured secret gives a clear message.
           code=$(curl -s -o perm.json -w '%{http_code}' -H "Authorization: Bearer ${TOKEN}" \
                  -H "Accept: application/vnd.github+json" "https://api.github.com/repos/${PUBLIC_REPO}")
           if [ "$code" != "200" ]; then
-            echo "::error::REGISTRY_SYNC_TOKEN was rejected for ${PUBLIC_REPO} (HTTP ${code}). The token may be expired, mistyped in the secret, or not granted access to that repository."
+            echo "::error::REGISTRY_SYNC_TOKEN was rejected for ${PUBLIC_REPO} (HTTP ${code}). HTTP 401 means GitHub does not recognize the token: it may be expired or revoked, or the secret may hold something other than the token (copy the value shown once when the token is generated, starting with github_pat_ or ghp_). HTTP 403/404 means the token is not granted that repository."
             exit 1
           fi
           git clone --depth 1 "https://github.com/${PUBLIC_REPO}.git" public 2>/dev/null \
