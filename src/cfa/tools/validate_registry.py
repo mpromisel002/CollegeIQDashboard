@@ -50,7 +50,10 @@ async def check_school(http: HttpClient, school: School) -> dict:
     row.update(year=doc.year, format=doc.format, url=doc.url)
     status, content, note = await fetch_cds(http, doc.url, doc.format)
     if content is None:
-        return {**row, "pass": False, "reason": f"download: {status.value} {note}"}
+        # HTTP 403 with no other change usually means the school's firewall refuses this network
+        # (cloud CI runners are often blocked), not that the link broke. Reported separately.
+        blocked = "HTTP 403" in note
+        return {**row, "pass": False, "blocked": blocked, "reason": f"download: {status.value} {note}"}
     loop = asyncio.get_running_loop()
     sections, err = await loop.run_in_executor(None, parse_document, content, doc.format, doc.year)
     if err:
@@ -82,22 +85,33 @@ def print_report(rows: list[dict]) -> None:
     for r in rows:
         secs = r.get("sections", {})
         cells = " ".join(f"{mark.get(secs.get(c, ''), '?'):>4}" for c in codes)
-        result = "PASS" if r["pass"] else f"FAIL ({r['reason']})"
+        if r["pass"]:
+            result = "PASS"
+        elif r.get("blocked"):
+            result = f"BLOCKED ({r['reason']})"
+        else:
+            result = f"FAIL ({r['reason']})"
         print(f"{r['name'][:38]:38} {r.get('format', ''):4} {cells}  {result}")
     n_pass = sum(r["pass"] for r in rows)
-    print(f"\n{n_pass}/{len(rows)} schools pass")
+    n_blocked = sum(bool(r.get("blocked")) for r in rows)
+    print(f"\n{n_pass}/{len(rows)} schools pass" + (f", {n_blocked} blocked (HTTP 403)" if n_blocked else ""))
 
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--registry", type=Path, default=None)
     ap.add_argument("--json", type=Path, default=None, help="write full results as JSON")
+    ap.add_argument(
+        "--allow-blocked",
+        action="store_true",
+        help="do not fail on HTTP 403 (school firewalls often block cloud CI runners)",
+    )
     args = ap.parse_args(argv)
     rows = asyncio.run(main_async(args.registry))
     print_report(rows)
     if args.json:
         args.json.write_text(json.dumps(rows, indent=2, default=str), encoding="utf-8")
-    return 0 if all(r["pass"] for r in rows) else 1
+    return 0 if all(r["pass"] or (args.allow_blocked and r.get("blocked")) for r in rows) else 1
 
 
 if __name__ == "__main__":

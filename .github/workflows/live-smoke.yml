@@ -45,7 +45,9 @@ jobs:
           PYTHONPATH: src
         run: |
           set -o pipefail
-          python -m cfa.tools.validate_registry 2>&1 | tee validate.log
+          # --allow-blocked: some schools' firewalls answer GitHub's cloud runners with HTTP 403 while
+          # serving the same file to normal networks. Those are listed as BLOCKED, not failed.
+          python -m cfa.tools.validate_registry --allow-blocked 2>&1 | tee validate.log
       - name: Open an issue on failure
         if: failure()
         uses: actions/github-script@v7

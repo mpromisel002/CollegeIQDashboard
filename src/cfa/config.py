@@ -18,9 +18,9 @@ REPO_URL = "https://github.com/mpromisel002/CollegeIQDashboard"
 USER_AGENT = f"{APP_NAME}/{__version__} (+{REPO_URL})"
 
 # --- Registry -----------------------------------------------------------------
-REGISTRY_REMOTE_URL = (
-    "https://raw.githubusercontent.com/mpromisel002/CollegeIQDashboard/main/registry/schools.yaml"
-)
+# The app repo is private, so the registry is mirrored to a small public repo by
+# .github/workflows/registry-sync.yml. Edit registry/schools.yaml here, never there.
+REGISTRY_REMOTE_URL = "https://raw.githubusercontent.com/mpromisel002/mpromisel002-CollegeIQDashboard-registry/main/schools.yaml"
 
 # --- HTTP (PLAN §5.1 rule 2) --------------------------------------------------
 CONNECT_TIMEOUT_S = 10.0
