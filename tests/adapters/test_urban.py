@@ -1,3 +1,4 @@
+import asyncio
 import json
 import re
 
@@ -12,9 +13,9 @@ BASE = "https://educationdata.urban.org/api/v1/college-university/ipeds"
 PATTERN = re.compile(r"/ipeds/([a-z-]+)/(\d{4})/(?:undergraduate/)?")
 
 
-def fixture_router(request: httpx.Request) -> httpx.Response:
+def fixture_router(request: httpx.Request, unitid: str | None = None) -> httpx.Response:
     m = PATTERN.search(request.url.path)
-    unitid = request.url.params.get("unitid")
+    unitid = unitid or request.url.params.get("unitid")
     path = API / f"urban_{m.group(1)}_{m.group(2)}_{unitid}.json"
     if path.exists():
         return httpx.Response(200, json=json.loads(path.read_text()))
@@ -124,3 +125,26 @@ async def test_source_down(http):
 async def test_health_check(http):
     respx.get("https://educationdata.urban.org/api/v1/api-endpoints/").respond(200, json={})
     assert (await UrbanIpedsAdapter(http).health_check()).status is Status.OK
+
+
+@respx.mock
+async def test_parallel_fetches_probe_empty_years_once(http):
+    async def slow_alabama(request: httpx.Request) -> httpx.Response:
+        await asyncio.sleep(0.01)  # let the parallel fetches overlap, as they do over a network
+        return fixture_router(request, "100751")
+
+    route = respx.get(url__startswith=BASE).mock(side_effect=slow_alabama)
+    adapter = UrbanIpedsAdapter(http, this_year=2026)
+    results = await asyncio.gather(*(adapter.fetch(100751 + i) for i in range(5)))
+    assert all(r.data["sat_math_25"].year == "2022" for r in results)
+    # sat_math walks 2025 -> 2022 for the first school only; the others start at the found year.
+    hits = [c.request.url.path for c in route.calls if "admissions-requirements/2025" in c.request.url.path]
+    assert len(hits) == 1
+
+
+@respx.mock
+async def test_failed_discovery_does_not_block_others(http):
+    respx.get(url__startswith=BASE).respond(503)
+    adapter = UrbanIpedsAdapter(http, this_year=2026)
+    results = await asyncio.gather(*(adapter.fetch(100751 + i) for i in range(3)))
+    assert all(r.status is Status.SOURCE_UNAVAILABLE for r in results)

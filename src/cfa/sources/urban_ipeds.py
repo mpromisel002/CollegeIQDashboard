@@ -275,6 +275,8 @@ class UrbanIpedsAdapter:
         self.cache = cache
         self.base_url = base_url.rstrip("/")
         self.this_year = this_year or config.current_year()
+        # Per topic: set once the first fetch has walked back to the latest year with data.
+        self._discovered: dict[str, asyncio.Event] = {}
 
     def _years(self, topic: str) -> list[int]:
         start = self.this_year - 1
@@ -303,6 +305,23 @@ class UrbanIpedsAdapter:
         return Status.OK, rows, ""
 
     async def fetch_topic(
+        self, topic: str, unitid: int
+    ) -> tuple[Status, dict[str, FieldValue], str, str | None]:
+        # Schools are fetched in parallel. Without this, every school would probe the same empty
+        # recent years before the year cache is filled; instead the first one probes, the rest wait.
+        if self.cache.get(("urban-year", topic)) is None:
+            event = self._discovered.get(topic)
+            if event is not None:
+                await event.wait()
+            else:
+                self._discovered[topic] = event = asyncio.Event()
+                try:
+                    return await self._fetch_topic(topic, unitid)
+                finally:
+                    event.set()  # also on failure, so the others never wait forever
+        return await self._fetch_topic(topic, unitid)
+
+    async def _fetch_topic(
         self, topic: str, unitid: int
     ) -> tuple[Status, dict[str, FieldValue], str, str | None]:
         path, parser, keys = TOPICS[topic]
