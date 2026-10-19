@@ -35,6 +35,11 @@ GROUPS: list[tuple[str, str, list[tuple[str, str]]]] = [
     ),
     ("control", "College type", [("Public", "Public"), ("Private", "Private")]),
     ("greek", "Greek life", [("Has Greek life", "Has fraternities/sororities"), ("No Greek life", "None")]),
+    (
+        "data_level",
+        "Data available",
+        [("Full", "Full data (Common Data Set)"), ("Federal", "Federal data only")],
+    ),
 ]
 
 

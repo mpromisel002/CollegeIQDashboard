@@ -16,6 +16,7 @@ from cfa.sources import sentinels
 from cfa.sources.base import FetchResult, worst
 from cfa.sources.http import HttpClient
 from cfa.sources.labels import URBAN_TEST_POLICY, format_phone, locale_label
+from cfa.states import STATE_FIPS
 
 SOURCE = "IPEDS (Urban)"
 CONTROL_LABELS = {1: "Public", 2: "Private nonprofit", 3: "Private for-profit"}
@@ -264,6 +265,51 @@ TOPICS: dict[str, tuple[str, Parser, tuple[str, ...]]] = {
 }
 
 
+TopicResult = tuple[Status, dict[str, FieldValue], str, str | None]
+
+
+def _parse_topic(topic: str, rows: list[dict[str, Any]], year: str) -> TopicResult:
+    """Parse one school's rows for one topic: (status, fields, note, year)."""
+    _path, parser, keys = TOPICS[topic]
+    try:
+        data = parser(rows, year)
+    except (ValidationError, ValueError, TypeError, KeyError, IndexError):
+        note = "Unexpected record format"
+        return (
+            Status.PARSE_FAILED,
+            {k: FieldValue.missing(SOURCE, Status.PARSE_FAILED, note) for k in keys},
+            note,
+            year,
+        )
+    for k in keys:
+        data.setdefault(k, FieldValue.missing(SOURCE, year=year))
+    missing = [k for k in keys if not data[k].ok]
+    return (Status.PARTIAL if missing else Status.OK), data, "", year
+
+
+# Server-side filters for bulk (many-school) requests: only the rows the parsers use.
+BULK_FILTERS: dict[str, str] = {
+    "grad-rates": "subcohort=2&race=99&sex=99",
+    "enrollment-headcount": "race=99&sex=99",
+}
+
+# Directory rows kept as candidate colleges for a student: active, public or private nonprofit,
+# mainly bachelor's-granting (IPEDS inst_category 2), excluding special-focus medical schools,
+# law schools and seminaries (Carnegie basic 2021 codes 24, 25, 31).
+STATES_PER_REQUEST = 10
+FOUR_YEAR_SECTORS = {1, 2}
+EXCLUDED_CARNEGIE = {24, 25, 31}
+
+
+def is_candidate_college(row: dict[str, Any]) -> bool:
+    return (
+        row.get("sector") in FOUR_YEAR_SECTORS
+        and row.get("inst_category") == 2
+        and row.get("currently_active_ipeds") == 1
+        and row.get("cc_basic_2021") not in EXCLUDED_CARNEGIE
+    )
+
+
 class UrbanIpedsAdapter:
     name = SOURCE
 
@@ -280,6 +326,10 @@ class UrbanIpedsAdapter:
         self.this_year = this_year or config.current_year()
         # Per topic: set once the first fetch has walked back to the latest year with data.
         self._discovered: dict[str, asyncio.Event] = {}
+        # Filled by prefetch(): topic -> unitid -> parsed result, and topics whose bulk load failed.
+        self._bulk: dict[str, dict[int, TopicResult]] = {}
+        self._bulk_failed: dict[str, TopicResult] = {}
+        self.directory_rows: list[dict[str, Any]] = []
 
     def _years(self, topic: str) -> list[int]:
         start = self.this_year - 1
@@ -310,6 +360,15 @@ class UrbanIpedsAdapter:
     async def fetch_topic(
         self, topic: str, unitid: int
     ) -> tuple[Status, dict[str, FieldValue], str, str | None]:
+        if topic in self._bulk_failed:
+            return self._bulk_failed[topic]
+        if topic in self._bulk:
+            _path, _parser, keys = TOPICS[topic]
+            hit = self._bulk[topic].get(unitid)
+            if hit is not None:
+                return hit
+            note = "Not reported to IPEDS for the latest year"
+            return Status.NOT_REPORTED, {k: FieldValue.missing(SOURCE, note=note) for k in keys}, note, None
         # Schools are fetched in parallel. Without this, every school would probe the same empty
         # recent years before the year cache is filled; instead the first one probes, the rest wait.
         if self.cache.get(("urban-year", topic)) is None:
@@ -327,7 +386,7 @@ class UrbanIpedsAdapter:
     async def _fetch_topic(
         self, topic: str, unitid: int
     ) -> tuple[Status, dict[str, FieldValue], str, str | None]:
-        path, parser, keys = TOPICS[topic]
+        path, _parser, keys = TOPICS[topic]
         last_status, last_note = Status.NOT_REPORTED, "No data in recent years"
         for year in self._years(topic):
             url = f"{self.base_url}/{path.format(year=year)}?unitid={unitid}"
@@ -337,23 +396,102 @@ class UrbanIpedsAdapter:
                 return status, {k: FieldValue.missing(SOURCE, status, note) for k in keys}, note, None
             if rows:
                 self.cache.set(("urban-year", topic), year)
-                try:
-                    data = parser(rows, str(year))
-                except (ValidationError, ValueError, TypeError, KeyError, IndexError):
-                    return (
-                        Status.PARSE_FAILED,
-                        {
-                            k: FieldValue.missing(SOURCE, Status.PARSE_FAILED, "Unexpected record format")
-                            for k in keys
-                        },
-                        "Unexpected record format",
-                        str(year),
-                    )
-                for k in keys:
-                    data.setdefault(k, FieldValue.missing(SOURCE, year=str(year)))
-                missing = [k for k in keys if not data[k].ok]
-                return (Status.PARTIAL if missing else Status.OK), data, "", str(year)
+                return _parse_topic(topic, rows, str(year))
         return last_status, {k: FieldValue.missing(SOURCE, note=last_note) for k in keys}, last_note, None
+
+    async def _bulk_topic(self, topic: str, scopes: list[str]) -> None:
+        """Load one topic for every school in the scopes.
+
+        Uses the newest year with data and the year before it, keeping each school's newest row:
+        IPEDS publishes a year in stages, so the newest year can cover only some schools for a while.
+        """
+        path, _parser, keys = TOPICS[topic]
+        extra = BULK_FILTERS.get(topic, "")
+
+        def url(year: int, scope: str) -> str:
+            query = "&".join(q for q in (scope, extra) if q)
+            return f"{self.base_url}/{path.format(year=year)}" + (f"?{query}" if query else "")
+
+        def fail(status: Status, note: str) -> None:
+            self._bulk_failed[topic] = (
+                status,
+                {k: FieldValue.missing(SOURCE, status, note) for k in keys},
+                note,
+                None,
+            )
+
+        start = self.this_year - 1
+        years = list(range(start, start - config.URBAN_YEAR_WALKBACK - 1, -1))
+        newest: int | None = None
+        probe: list[dict[str, Any]] = []
+        for i, year in enumerate(years):  # probe with the first scope only; empty years are cheap
+            status, probe, note = await self._rows(url(year, scopes[0]))
+            if status is not Status.OK:
+                fail(status, note)
+                return
+            if probe:
+                newest = i
+                break
+        if newest is None:
+            self._bulk[topic] = {}
+            return
+        use = years[newest : newest + (1 if topic == "directory" else 2)]
+
+        async def load(year: int) -> tuple[Status, list[dict[str, Any]], str]:
+            todo = scopes[1:] if year == use[0] else scopes
+            results = await asyncio.gather(*(self._rows(url(year, sc)) for sc in todo))
+            rows = list(probe) if year == use[0] else []
+            for status, more, note in results:
+                if status is not Status.OK:
+                    return status, [], note
+                rows.extend(more)
+            return Status.OK, rows, ""
+
+        loaded = await asyncio.gather(*(load(y) for y in use))
+        by_school: dict[int, tuple[int, list[dict[str, Any]]]] = {}
+        for year, (status, rows, note) in zip(use, loaded, strict=True):
+            if status is not Status.OK:
+                if year == use[0]:
+                    fail(status, note)
+                    return
+                continue  # the older year only fills gaps; losing it is not fatal
+            grouped: dict[int, list[dict[str, Any]]] = {}
+            for row in rows:
+                uid = row.get("unitid")
+                if isinstance(uid, int):
+                    grouped.setdefault(uid, []).append(row)
+            for uid, rs in grouped.items():
+                by_school.setdefault(uid, (year, rs))  # newest year first, so it wins
+        self.cache.set(("urban-year", topic), use[0])
+        if topic == "directory":
+            self.directory_rows = [rs[0] for _y, rs in by_school.values()]
+        self._bulk[topic] = {uid: _parse_topic(topic, rs, str(y)) for uid, (y, rs) in by_school.items()}
+
+    async def prefetch(
+        self, fips_codes: list[int] | None, progress: Callable[[str], None] | None = None
+    ) -> None:
+        """Load every topic for whole states at once (None = every state and territory).
+
+        Afterwards fetch() answers from memory for any school in those states, so thousands of
+        schools cost a few dozen requests instead of several per school.
+        """
+        codes = fips_codes or sorted(STATE_FIPS.values())
+        # Several states per request keeps responses moderate (a whole-country table can be 30 MB).
+        scopes = [
+            "fips=" + ",".join(str(c) for c in codes[i : i + STATES_PER_REQUEST])
+            for i in range(0, len(codes), STATES_PER_REQUEST)
+        ]
+        await self._bulk_topic("directory", scopes)
+        if progress:
+            progress("directory")
+        rest = [t for t in TOPICS if t != "directory"]
+
+        async def one(topic: str) -> None:
+            await self._bulk_topic(topic, scopes)
+            if progress:
+                progress(topic)
+
+        await asyncio.gather(*(one(t) for t in rest))
 
     async def fetch(self, unitid: int) -> FetchResult:
         cached = self.cache.get(("urban", unitid))

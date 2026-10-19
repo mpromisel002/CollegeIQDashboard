@@ -35,6 +35,17 @@ this file wins and the PLAN changelog says why.
 **`fall-enrollment`** (named in the plan) only returns credit-hour/FTE rows at that path; headcount
 comes from `enrollment-headcount/{year}/undergraduate/` instead.
 
+### Bulk loading for "All four-year colleges"
+
+`UrbanIpedsAdapter.prefetch()` asks each IPEDS table for whole states at once (`?fips=42,36,…`, at most
+10 states per request; grad rates add `subcohort=2&race=99&sex=99`, headcount `race=99&sex=99`). It
+loads the newest year with data **and the year before**, keeping each school's newest row, because
+IPEDS releases a year in stages (a new year can cover a fraction of schools for a while). Candidate
+colleges come from the directory: `sector` 1 or 2, `inst_category` 2 (primarily baccalaureate or
+above), `currently_active_ipeds` 1, and not Carnegie 2021 basic 24/25/31 (faith-related special
+focus, medical schools, law schools). Curated-list schools are always included. If the directory
+cannot be loaded the app falls back to the curated list and says so.
+
 ## 2. College Scorecard
 
 - `https://api.data.gov/ed/collegescorecard/v1/schools?id={id}&fields=...&api_key=...`
@@ -55,6 +66,9 @@ comes from `enrollment-headcount/{year}/undergraduate/` instead.
 | `latest.completion.completion_rate_4yr_150nt` | grad_rate_6yr (3rd choice) |
 
 Scorecard does not expose a data year for `latest.*`; badges show "latest".
+
+For many schools, `ScorecardAdapter.prefetch()` sends `id=<up to 100 comma-separated UnitIDs>&per_page=100`
+(one request per 100 schools; api.data.gov keys allow 1,000 requests an hour).
 
 ## 3. Common Data Set (each school's own PDF/XLSX)
 

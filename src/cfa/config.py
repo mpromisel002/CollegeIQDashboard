@@ -35,7 +35,7 @@ CDS_MAX_BYTES = 25 * 1024 * 1024
 
 # --- Session cache --------------------------------------------------------------
 CACHE_TTL_S = 60 * 60
-CACHE_MAX_ITEMS = 2048
+CACHE_MAX_ITEMS = 20000  # a nationwide search caches ~2,300 schools per source
 
 # --- Data sources -----------------------------------------------------------------
 URBAN_BASE_URL = "https://educationdata.urban.org/api/v1/college-university/ipeds"
@@ -53,6 +53,7 @@ SAFETY_ADMIT_RATE_PCT = 50.0  # admit rate at/above this is required for Safety
 GPA_BOTTOM_QUARTILE = 25.0  # student's GPA percentile below this => Reach
 GPA_TOP_QUARTILE = 75.0  # student's GPA percentile at/above this needed for Safety
 GPA_MEDIAN = 50.0
+MIN_SUBMIT_PCT = 5.0  # ignore a school's SAT/ACT range if fewer of its enrollees submitted that test
 
 # --- Culture fit (PLAN §6.3) --------------------------------------------------------
 GREEK_FULL_SCORE_PCT = 30.0  # >= this % Greek participation scores 100 for "wants Greek"

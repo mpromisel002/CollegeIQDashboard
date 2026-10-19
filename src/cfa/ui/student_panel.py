@@ -24,6 +24,10 @@ from cfa.models.student import Athletics, GreekDirection, Setting, SizePref, Stu
 from cfa.states import parse_states
 from cfa.ui.theme import named
 
+SCOPE_ALL = "All four-year colleges"
+SCOPE_CURATED = "Curated list only (full data)"
+SCOPES = [SCOPE_ALL, SCOPE_CURATED]
+
 IMPORTANCE = ["0 - Don't care", "1 - Low", "2 - Medium", "3 - High"]
 
 
@@ -136,6 +140,13 @@ class StudentPanel(QWidget):
         f2.addRow("", self.ea)
         f2.addRow("Notes", self.notes)
 
+        self.scope = QComboBox()
+        self.scope.addItems(list(SCOPES))
+        self.scope.setToolTip(
+            "All four-year colleges: every public and private nonprofit bachelor's college in the "
+            "preferred states (or the whole country), using federal data. Schools on the curated list "
+            "also get their Common Data Set. Curated list: only those schools, all with full data."
+        )
         self.run_btn = named(QPushButton("Run Match"), "Run")
         self.run_btn.setDefault(True)
         self.run_btn.clicked.connect(self.run_requested)
@@ -162,7 +173,14 @@ class StudentPanel(QWidget):
         outer.setSpacing(8)
         outer.addWidget(scroll, 1)
         outer.addLayout(buttons)
+        scope_row = QHBoxLayout()
+        scope_row.addWidget(QLabel("Search"))
+        scope_row.addWidget(self.scope, 1)
+        outer.addLayout(scope_row)
         outer.addWidget(self.run_btn)
+
+    def search_all(self) -> bool:
+        return self.scope.currentText() == SCOPE_ALL
 
     def preferred_states(self) -> tuple[list[str], bool]:
         codes, _unknown = parse_states(self.states.text())

@@ -26,6 +26,8 @@ TONES: dict[str, tuple[str, str]] = {
     "private": ("#d5efe2", "#1d6343"),
     "selectivity": ("#fbe8cc", "#80500a"),
     "neutral": ("#edf0f3", "#3f4a55"),
+    "cds": ("#dcefee", "#175a57"),
+    "federal": ("#ffffff", "#5d6b78"),
 }
 
 STYLESHEET = f"""
@@ -124,6 +126,9 @@ QLabel[tone] {{
     font-weight: 500;
 }}
 {"".join(f'QLabel[tone="{k}"] {{ background: {bg}; color: {fg}; }}' for k, (bg, fg) in TONES.items())}
+QLabel[tone="federal"] {{
+    border: 1px dashed #aab4bf;
+}}
 
 /* Sidebar sections */
 QGroupBox {{

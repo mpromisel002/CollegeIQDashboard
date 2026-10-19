@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import time
 from collections.abc import Callable
 from typing import Any
@@ -18,6 +19,7 @@ from cfa.sources.labels import SCORECARD_TEST_POLICY, locale_label
 
 SOURCE = "College Scorecard"
 YEAR = "latest"
+PER_PAGE = 100  # the API's maximum page size
 
 # Scorecard dotted field name -> our field key
 FIELD_MAP: dict[str, str] = {
@@ -127,6 +129,7 @@ class ScorecardAdapter:
         self.api_key = api_key
         self.cache = cache
         self.base_url = base_url
+        self._bulk: dict[int, FetchResult] = {}  # filled by prefetch(), for this run only
 
     def _all_missing(self, status: Status, note: str) -> dict[str, FieldValue]:
         keys = [*FIELD_MAP.values(), "setting"]
@@ -138,7 +141,7 @@ class ScorecardAdapter:
             return FetchResult(
                 SOURCE, Status.AUTH_MISSING, self._all_missing(Status.AUTH_MISSING, note), note
             )
-        cached = self.cache.get(("scorecard", unitid))
+        cached = self.cache.get(("scorecard", unitid)) or self._bulk.get(unitid)
         if cached is not None:
             return cached
         start = time.monotonic()
@@ -165,6 +168,59 @@ class ScorecardAdapter:
         out = FetchResult(SOURCE, status, data, year=YEAR, elapsed_s=time.monotonic() - start)
         self.cache.set(("scorecard", unitid), out)
         return out
+
+    async def prefetch(self, unitids: list[int], progress: Callable[[str], None] | None = None) -> None:
+        """Load many schools with one request per 100 (the API's page limit) instead of one each."""
+        if not self.api_key:
+            return
+        todo = [u for u in unitids if self.cache.get(("scorecard", u)) is None]
+        chunks = [todo[i : i + PER_PAGE] for i in range(0, len(todo), PER_PAGE)]
+
+        async def one(chunk: list[int]) -> None:
+            start = time.monotonic()
+            params = {
+                "id": ",".join(str(u) for u in chunk),
+                "fields": ",".join(["id", *FIELD_MAP]),
+                "per_page": PER_PAGE,
+                "api_key": self.api_key,
+            }
+            res = await self.http.get(self.base_url, params=params)
+            try:
+                env = _Envelope.model_validate(res.json()) if res.ok else None
+            except (ValueError, ValidationError):
+                env = None
+            if env is None:
+                status = res.status if not res.ok else Status.PARSE_FAILED
+                note = res.note or "Unexpected response format"
+                for u in chunk:  # remembered for this run only, so a later Retry asks again
+                    self._bulk[u] = FetchResult(SOURCE, status, self._all_missing(status, note), note)
+                return
+            seen: set[int] = set()
+            for row in env.results:
+                uid = row.get("id")
+                if not isinstance(uid, int):
+                    continue
+                seen.add(uid)
+                data = parse_school(row)
+                ok = all(fv.ok for fv in data.values())
+                out = FetchResult(
+                    SOURCE,
+                    Status.OK if ok else Status.PARTIAL,
+                    data,
+                    year=YEAR,
+                    elapsed_s=time.monotonic() - start,
+                )
+                self.cache.set(("scorecard", uid), out)
+            for u in chunk:
+                if u not in seen:
+                    note = "School not found in Scorecard"
+                    self._bulk[u] = FetchResult(
+                        SOURCE, Status.NOT_REPORTED, self._all_missing(Status.NOT_REPORTED, note), note
+                    )
+            if progress:
+                progress("scorecard")
+
+        await asyncio.gather(*(one(c) for c in chunks))
 
     async def health_check(self) -> FetchResult:
         if not self.api_key:

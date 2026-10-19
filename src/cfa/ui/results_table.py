@@ -91,7 +91,7 @@ class ResultsModel(QAbstractTableModel):
         """(display text, sort key, tooltip)."""
         r = row.record
         if col == COL_NAME:
-            return r.name, r.name.lower(), ""
+            return r.name, r.name.lower(), r.name
         if col == 1:
             loc = location(r)
             return loc or "—", str(r.value("state") or "~") + loc, ""
@@ -161,6 +161,7 @@ class ResultsFilter(QSortFilterProxyModel):
         self.selectivity: set[str] = set()
         self.control: set[str] = set()
         self.greek: set[str] = set()  # "Has Greek life" / "No Greek life"
+        self.data_level: set[str] = set()  # "Full" (has a Common Data Set) / "Federal"
 
     def set_filters(self, **kw: set[str]) -> None:
         if hasattr(self, "beginFilterChange"):  # Qt >= 6.9
@@ -198,6 +199,8 @@ class ResultsFilter(QSortFilterProxyModel):
             kind = "Public" if ctl == "Public" else "Private" if ctl.startswith("Private") else ""
             if kind not in self.control:
                 return False
+        if self.data_level and ("Full" if r.links.get("cds") else "Federal") not in self.data_level:
+            return False
         if self.greek:
             g = greek_pct(r)
             if g is None:
@@ -245,8 +248,13 @@ class ResultsTable(QTableView):
         self.horizontalHeader().setDefaultAlignment(
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
         )
-        self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-        self.horizontalHeader().setStretchLastSection(True)
+        header = self.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        # Long names would push every other column off screen; they are elided, full name on hover.
+        header.setSectionResizeMode(COL_NAME, QHeaderView.ResizeMode.Interactive)
+        header.resizeSection(COL_NAME, 300)
+        header.setStretchLastSection(True)
+        self.setTextElideMode(Qt.TextElideMode.ElideRight)
 
     def row_at(self, index: QModelIndex) -> ResultRow | None:
         if not index.isValid():
