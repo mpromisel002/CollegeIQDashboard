@@ -22,6 +22,7 @@ PRIORITY: dict[str, tuple[str, ...]] = {
     "website": (URBAN, SCORECARD),
     "locale": (URBAN, SCORECARD),
     "setting": (URBAN, SCORECARD),
+    "control": (URBAN,),
     **{
         f"{k}_{g}": (CDS, URBAN)
         for k in ("applicants", "admits")

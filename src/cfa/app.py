@@ -62,9 +62,11 @@ def main(argv: list[str] | None = None) -> int:
 
     from cfa.pipeline import shutdown_pool
     from cfa.ui.main_window import MainWindow
+    from cfa.ui.theme import apply_theme
 
     app = QApplication([sys.argv[0], *qt_args])
     app.setApplicationName("College Fit Advisor")
+    apply_theme(app)
     icon = config.bundled_path("cfa/ui/icon.png")
     if not icon.exists():
         icon = config.bundled_path("src/cfa/ui/icon.png")

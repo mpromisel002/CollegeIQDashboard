@@ -9,19 +9,24 @@ import logging
 from collections import Counter
 from pathlib import Path
 
-from PySide6.QtCore import QSettings, QThreadPool, QTimer
+from PySide6.QtCore import QSettings, Qt, QThreadPool, QTimer
 from PySide6.QtGui import QAction, QTextDocument
 from PySide6.QtWidgets import (
+    QButtonGroup,
     QComboBox,
-    QDockWidget,
     QFileDialog,
+    QFrame,
     QHBoxLayout,
     QLabel,
-    QLineEdit,
     QMainWindow,
+    QMenu,
     QMessageBox,
     QProgressBar,
     QPushButton,
+    QSplitter,
+    QStackedWidget,
+    QTabWidget,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
@@ -29,77 +34,107 @@ from PySide6.QtWidgets import (
 from cfa import __version__, config
 from cfa.models.college import FIELDS, CollegeRecord
 from cfa.models.field_value import Status
-from cfa.models.student import SizePref, StudentProfile
+from cfa.models.student import StudentProfile
 from cfa.pipeline import RunResult, parse_pool, run_all
 from cfa.scoring import academic, culture
 from cfa.sources.http import HttpClient
 from cfa.sources.registry import Registry, RegistryLoad, load_bundled, load_registry
 from cfa.ui.college_detail import CollegeDetail
+from cfa.ui.filter_panel import FilterPanel
 from cfa.ui.format import fmt_value
-from cfa.ui.results_table import ResultRow, ResultsTable
+from cfa.ui.results_cards import ResultCards
+from cfa.ui.results_table import COL_CULTURE, COL_NAME, COL_RATE, COL_SIZE, COL_TIER, ResultRow, ResultsTable
 from cfa.ui.student_panel import StudentPanel
+from cfa.ui.theme import named
 from cfa.ui.workers import Worker
 
 log = logging.getLogger(__name__)
+
+# Sort menu: label -> (table column, order). "Best match" = Safety→Target→Reach, best culture fit first.
+SORTS: dict[str, tuple[int, Qt.SortOrder]] = {
+    "Best match": (COL_TIER, Qt.SortOrder.AscendingOrder),
+    "Culture fit": (COL_CULTURE, Qt.SortOrder.DescendingOrder),
+    "Acceptance rate (lowest first)": (COL_RATE, Qt.SortOrder.AscendingOrder),
+    "Acceptance rate (highest first)": (COL_RATE, Qt.SortOrder.DescendingOrder),
+    "Enrollment (largest first)": (COL_SIZE, Qt.SortOrder.DescendingOrder),
+    "Name (A–Z)": (COL_NAME, Qt.SortOrder.AscendingOrder),
+}
 
 
 class MainWindow(QMainWindow):
     def __init__(self, *, load_remote_registry: bool = True) -> None:
         super().__init__()
         self.setWindowTitle(f"College Fit Advisor {__version__}")
-        self.resize(1300, 820)
+        self.resize(1360, 860)
         self.pool = QThreadPool.globalInstance()
         self.registry: Registry = Registry(schema_version=1, schools=[])
         self.records: list[CollegeRecord] = []
         self.worker: Worker | None = None
         self.settings = QSettings("CollegeFitAdvisor", "CollegeFitAdvisor")
 
+        # Left sidebar: the student's profile and the results filters.
         self.student = StudentPanel()
         self.student.run_requested.connect(self.run_match)
         self.student.save_requested.connect(self.save_profile)
         self.student.load_requested.connect(self.load_profile)
-        dock = QDockWidget("Student profile")
-        dock.setWidget(self.student)
-        dock.setFeatures(QDockWidget.DockWidgetFeature.NoDockWidgetFeatures)
-        from PySide6.QtCore import Qt
+        self.student.states_changed.connect(self.apply_filters)
+        self.filters = FilterPanel()
+        self.filters.changed.connect(self.apply_filters)
+        self.tabs = QTabWidget()
+        self.tabs.addTab(self.student, "Student")
+        self.tabs.addTab(self.filters, "Filters")
+        sidebar = named(QFrame(), "Panel")
+        sv = QVBoxLayout(sidebar)
+        sv.setContentsMargins(12, 8, 12, 12)
+        sv.addWidget(self.tabs)
+        sidebar.setMinimumWidth(380)
+        sidebar.setMaximumWidth(480)
 
-        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, dock)
-
-        self.banner = QLabel()
+        # Results: title, count, view toggle and sort; then cards or table.
+        self.banner = named(QLabel(), "Banner")
         self.banner.setWordWrap(True)
-        self.banner.setStyleSheet("background: #fff4d6; color: #5a4300; padding: 6px; border-radius: 4px;")
         self.banner.hide()
-        self.toast = QLabel()
-        self.toast.setStyleSheet("background: #333; color: white; padding: 6px 10px; border-radius: 4px;")
+        self.toast = named(QLabel(), "Toast")
+        self.toast.setWordWrap(True)
         self.toast.hide()
 
         self.table = ResultsTable()
         self.table.doubleClicked.connect(self.open_detail)
+        self.cards = ResultCards()
+        self.cards.details_requested.connect(self.show_detail)
+        self.views = QStackedWidget()
+        self.views.addWidget(self.cards)
+        self.views.addWidget(self.table)
+        self.table.proxy.layoutChanged.connect(self._refresh_views)
 
-        self.f_tier = QComboBox()
-        self.f_tier.addItems(["Any", "Safety", "Target", "Reach", "Unclassified"])
-        self.f_state = QLineEdit()
-        self.f_state.setPlaceholderText("States, e.g. AL, TN")
-        self.f_greek = QComboBox()
-        self.f_greek.addItems(["Any", "Has Greek life", "No Greek life"])
-        self.f_setting = QComboBox()
-        self.f_setting.addItems(["Any", "City", "Suburb", "Town", "Rural"])
-        self.f_size = QComboBox()
-        self.f_size.addItems(["Any"] + [s.value for s in SizePref if s is not SizePref.ANY])
-        for combo in (self.f_tier, self.f_greek, self.f_setting, self.f_size):
-            combo.currentTextChanged.connect(self.apply_filters)
-        self.f_state.textChanged.connect(self.apply_filters)
-        filters = QHBoxLayout()
-        for label, w in (
-            ("Tier", self.f_tier),
-            ("State", self.f_state),
-            ("Greek", self.f_greek),
-            ("Setting", self.f_setting),
-            ("Size", self.f_size),
-        ):
-            filters.addWidget(QLabel(label))
-            filters.addWidget(w)
-        filters.addStretch(1)
+        self.count_label = named(QLabel("No results yet"), "Muted")
+        self.count_label.setWordWrap(True)
+        self.card_btn = named(QPushButton("Cards"), "Segment")
+        self.table_btn = named(QPushButton("Table"), "Segment")
+        toggle = QButtonGroup(self)
+        for i, b in enumerate((self.card_btn, self.table_btn)):
+            b.setCheckable(True)
+            toggle.addButton(b, i)
+        self.card_btn.setChecked(True)
+        toggle.idClicked.connect(self.views.setCurrentIndex)
+        self.sort = QComboBox()
+        self.sort.addItems(list(SORTS))
+        self.sort.currentTextChanged.connect(self.apply_sort)
+
+        head = QHBoxLayout()
+        titles = QVBoxLayout()
+        titles.setSpacing(2)
+        titles.addWidget(named(QLabel("Search Results"), "PageTitle"))
+        titles.addWidget(self.count_label)
+        head.addLayout(titles, 1)
+        seg = QHBoxLayout()
+        seg.setSpacing(0)
+        seg.addWidget(self.card_btn)
+        seg.addWidget(self.table_btn)
+        head.addLayout(seg)
+        head.addSpacing(8)
+        head.addWidget(QLabel("Sort by"))
+        head.addWidget(self.sort)
 
         self.progress = QProgressBar()
         self.progress.hide()
@@ -110,44 +145,80 @@ class MainWindow(QMainWindow):
         prog.addWidget(self.progress, 1)
         prog.addWidget(self.cancel_btn)
 
-        central = QWidget()
-        v = QVBoxLayout(central)
-        v.addWidget(self.banner)
-        v.addLayout(filters)
-        v.addWidget(self.table, 1)
-        v.addLayout(prog)
-        v.addWidget(self.toast)
-        self.setCentralWidget(central)
+        results = named(QFrame(), "Panel")
+        rv = QVBoxLayout(results)
+        rv.setContentsMargins(18, 14, 18, 14)
+        rv.setSpacing(10)
+        rv.addLayout(head)
+        rv.addWidget(named(QFrame(), "Divider"))
+        rv.addWidget(self.banner)
+        rv.addLayout(prog)
+        rv.addWidget(self.views, 1)
+        rv.addWidget(self.toast)
+
+        split = QSplitter(Qt.Orientation.Horizontal)
+        split.addWidget(sidebar)
+        split.addWidget(results)
+        split.setStretchFactor(1, 1)
+        split.setChildrenCollapsible(False)
+        split.setHandleWidth(14)
+
+        page = named(QWidget(), "Page")
+        pv = QVBoxLayout(page)
+        pv.setContentsMargins(0, 0, 0, 0)
+        pv.setSpacing(0)
+        pv.addWidget(self._header())
+        body = QVBoxLayout()
+        body.setContentsMargins(16, 16, 16, 12)
+        body.addWidget(split)
+        pv.addLayout(body, 1)
+        self.setCentralWidget(page)
 
         self.health_label = QLabel("Sources: not run yet")
         self.statusBar().addPermanentWidget(self.health_label)
-        self._menus()
+        self.apply_filters()
         self._load_registry(remote=load_remote_registry)
 
-    # ----------------------------------------------------------------- menus
-    def _menus(self) -> None:
-        m = self.menuBar().addMenu("&File")
-        for text, slot in (
-            ("Load profile…", self.load_profile),
-            ("Save profile…", self.save_profile),
-            ("Export results to CSV…", self.export_csv),
-            ("Export results to PDF…", self.export_pdf),
-        ):
-            a = QAction(text, self)
-            a.triggered.connect(slot)
-            m.addAction(a)
-        m.addSeparator()
-        q = QAction("Quit", self)
-        q.triggered.connect(self.close)
-        m.addAction(q)
-        t = self.menuBar().addMenu("&Tools")
-        s = QAction("Settings…", self)
-        s.triggered.connect(self.open_settings)
-        t.addAction(s)
-        h = self.menuBar().addMenu("&Help")
-        a = QAction("About", self)
-        a.triggered.connect(self.about)
-        h.addAction(a)
+    # ----------------------------------------------------------------- header bar (replaces the menu bar)
+    def _header(self) -> QFrame:
+        bar = named(QFrame(), "HeaderBar")
+        h = QHBoxLayout(bar)
+        h.setContentsMargins(18, 8, 12, 8)
+        h.addWidget(named(QLabel("College Fit Advisor"), "AppTitle"))
+        self.registry_label = named(QLabel("Loading school list…"), "HeaderInfo")
+        h.addSpacing(16)
+        h.addWidget(self.registry_label)
+        h.addStretch(1)
+
+        def menu_button(text: str, items: list[tuple[str, object]]) -> QToolButton:
+            b = QToolButton()
+            b.setText(text + "  ▾")
+            b.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+            m = QMenu(b)
+            for label, slot in items:
+                a = QAction(label, b)
+                a.triggered.connect(slot)
+                m.addAction(a)
+            b.setMenu(m)
+            return b
+
+        h.addWidget(
+            menu_button(
+                "Profile", [("Load profile…", self.load_profile), ("Save profile…", self.save_profile)]
+            )
+        )
+        h.addWidget(
+            menu_button(
+                "Export",
+                [("Export results to CSV…", self.export_csv), ("Export results to PDF…", self.export_pdf)],
+            )
+        )
+        for text, slot in (("Settings", self.open_settings), ("About", self.about)):
+            b = QToolButton()
+            b.setText(text)
+            b.clicked.connect(slot)
+            h.addWidget(b)
+        return bar
 
     def about(self) -> None:
         QMessageBox.about(
@@ -190,9 +261,8 @@ class MainWindow(QMainWindow):
     def set_registry(self, load: RegistryLoad) -> None:
         self.registry = load.registry
         self.show_banner(load.warning)
-        self.statusBar().showMessage(
-            f"School list: {len(self.registry.schools)} schools ({load.origin})", 8000
-        )
+        origin = {"remote": "online", "bundled": "built-in copy", "empty": "unavailable"}[load.origin]
+        self.registry_label.setText(f"{len(self.registry.schools)} schools · school list {origin}")
 
     # ----------------------------------------------------------------- profiles
     def save_profile(self) -> None:
@@ -287,6 +357,7 @@ class MainWindow(QMainWindow):
         rows = [ResultRow(r, academic.classify(profile, r), culture.score(profile, r)) for r in self.records]
         self.table.results_model.set_rows(rows)
         self.apply_filters()
+        self.apply_sort()
 
     def _update_health(self) -> None:
         counts: dict[str, Counter] = {}
@@ -309,19 +380,45 @@ class MainWindow(QMainWindow):
         self.health_label.setText(" | ".join(parts) or "Sources: no data")
 
     def apply_filters(self) -> None:
-        self.table.proxy.set_filters(
-            tier=self.f_tier.currentText(),
-            state=self.f_state.text(),
-            greek=self.f_greek.currentText(),
-            setting=self.f_setting.currentText(),
-            size=self.f_size.currentText(),
-        )
+        states, only = self.student.preferred_states()
+        self.filters.set_states(states, only)
+        self.table.proxy.set_filters(states=set(states) if only else set(), **self.filters.values())
+        self._refresh_views()
+
+    def apply_sort(self) -> None:
+        col, order = SORTS.get(self.sort.currentText(), SORTS["Best match"])
+        self.table.sortByColumn(col, order)
+
+    def _refresh_views(self) -> None:
+        rows = self.table.visible_rows()
+        total = len(self.table.results_model.rows)
+        proxy = self.table.proxy
+        if not total:
+            self.count_label.setText("No results yet. Fill in the student profile and press Run Match.")
+            self.cards.set_rows([], "Run a match to see schools here.")
+            return
+        text = f"Showing {len(rows)} of {total} colleges"
+        if proxy.states:
+            text += f" in {', '.join(sorted(proxy.states))}"
+            hidden = proxy.hidden_by_state()
+            if hidden:
+                text += f" · {hidden} in other states hidden"
+        self.count_label.setText(text)
+        empty = "No schools match these filters."
+        if not rows and proxy.states:
+            empty = (
+                f"None of the {total} schools are in {', '.join(sorted(proxy.states))}. Untick "
+                '"Only show schools in these states" on the Student tab to see the rest.'
+            )
+        self.cards.set_rows(rows, empty)
 
     # ----------------------------------------------------------------- detail
     def open_detail(self, index) -> None:
         row = self.table.row_at(index)
-        if row is None:
-            return
+        if row is not None:
+            self.show_detail(row)
+
+    def show_detail(self, row: ResultRow) -> None:
         dlg = CollegeDetail(row, self)
 
         def retry(uid: int) -> None:

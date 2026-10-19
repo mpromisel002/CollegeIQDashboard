@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import html
 from urllib.parse import quote_plus
 
 from PySide6.QtCore import Qt, QUrl, Signal
@@ -9,6 +10,7 @@ from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
     QDialog,
     QFormLayout,
+    QFrame,
     QGridLayout,
     QGroupBox,
     QHBoxLayout,
@@ -56,14 +58,29 @@ class CollegeDetail(QDialog):
         self.setWindowTitle(r.name)
         self.resize(980, 760)
 
-        header = QLabel(
-            f"<h2>{r.name}</h2>"
-            f"<b>{row.academic.tier}</b> — {row.academic.reason}<br>"
-            f"Culture fit: <b>{'—' if row.culture.score is None else f'{row.culture.score:.0f}'}</b>"
-            f" — {row.culture.explain()}"
-        )
-        header.setWordWrap(True)
-        header.setTextFormat(Qt.TextFormat.RichText)
+        from cfa.ui.results_cards import badges, culture_summary
+        from cfa.ui.results_table import location
+        from cfa.ui.theme import named
+
+        header = named(QFrame(), "Card")
+        hv = QVBoxLayout(header)
+        hv.setContentsMargins(18, 14, 18, 14)
+        hv.addWidget(named(QLabel(r.name), "CardTitle"))
+        hv.addWidget(named(QLabel(location(r) or "Location not available"), "Muted"))
+        pills = QHBoxLayout()
+        pills.setSpacing(8)
+        for b in badges(row):
+            pills.addWidget(b)
+        pills.addStretch(1)
+        hv.addLayout(pills)
+        why = named(QFrame(), "WhyBox")
+        wv = QVBoxLayout(why)
+        wv.setContentsMargins(12, 8, 12, 8)
+        for title, text in (("Academic fit.", row.academic.reason), ("Culture fit.", culture_summary(row))):
+            lbl = QLabel(f"<b>{title}</b> {html.escape(text)}")
+            lbl.setWordWrap(True)
+            wv.addWidget(lbl)
+        hv.addWidget(why)
 
         body = QWidget()
         grid = QGridLayout(body)

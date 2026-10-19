@@ -8,6 +8,8 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from cfa.states import parse_states
+
 
 class GreekDirection(StrEnum):
     WANTS = "wants"
@@ -49,6 +51,7 @@ class StudentProfile(BaseModel):
     submits_tests: bool = True
     intended_major: str = ""
     preferred_states: list[str] = Field(default_factory=list)
+    only_preferred_states: bool = True  # hide schools outside preferred_states from the results
     size_pref: SizePref = SizePref.ANY
     size_importance: int = Field(default=0, ge=0, le=3)
     setting_pref: Setting = Setting.ANY
@@ -67,11 +70,10 @@ class StudentProfile(BaseModel):
     @field_validator("preferred_states", mode="before")
     @classmethod
     def _norm_states(cls, v: object) -> list[str]:
-        if isinstance(v, str):
-            v = v.replace(";", ",").split(",")
-        if not isinstance(v, list):
+        if not isinstance(v, str | list):
             return []
-        return [str(s).strip().upper() for s in v if str(s).strip()]
+        codes, _unknown = parse_states(v)  # the panel warns about unrecognized entries
+        return codes
 
     @property
     def sat_total(self) -> int | None:

@@ -10,6 +10,8 @@ ROOT = os.path.abspath(os.path.join(SPECPATH, ".."))  # noqa: F821 (SPECPATH is 
 datas = [
     (os.path.join(ROOT, "registry", "schools.yaml"), "registry"),
     (os.path.join(ROOT, "src", "cfa", "ui", "icon.png"), os.path.join("cfa", "ui")),
+    (os.path.join(ROOT, "src", "cfa", "ui", "chevron.png"), os.path.join("cfa", "ui")),
+    (os.path.join(ROOT, "src", "cfa", "ui", "check.png"), os.path.join("cfa", "ui")),
 ]
 datas += collect_data_files("certifi")  # CA bundle so HTTPS works on clean Windows installs
 

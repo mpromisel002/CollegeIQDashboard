@@ -11,23 +11,34 @@ Python is not needed. An internet connection is required: no college data is sto
 
 ## First run
 
-*Tools → Settings*: paste a free College Scorecard key from <https://api.data.gov/signup> (it is
+**Settings** (top right): paste a free College Scorecard key from <https://api.data.gov/signup> (it is
 stored in Windows Credential Manager). Without it the app still works; undergraduate size and a few
 fallbacks come from IPEDS instead. **Test connections** shows each source's health.
 
 ## Matching a student
 
-1. Fill in the profile on the left: unweighted GPA, SAT and/or ACT (or untick "Will submit test
-   scores"), preferred states, and how much each culture factor matters (0 = ignore … 3 = high).
-2. **Run Match**. All schools are fetched in parallel (progress bar; **Cancel** stops early).
-3. The table is sortable; filter by tier, state, Greek life, setting and size. Hover a tier or culture
-   score to see the reasoning.
-4. Double-click a school for every field with its source badge (source · year), the GPA chart, admit
-   rate by round, what the school weighs (CDS C7), and buttons to open Niche, Peterson's, BigFuture,
-   College Transitions, the CDS document and the school site in your browser.
+1. Fill in the **Student** tab on the left: unweighted GPA, SAT and/or ACT (or untick "Will submit
+   test scores"), preferred states, and how much each culture factor matters (0 = ignore … 3 = high).
+2. **Preferred states** accepts codes or names in any form: `PA, NY, MA`, `pa ny ma` or
+   `Pennsylvania, New York`. Anything that isn't a U.S. state is flagged in orange and ignored.
+   While **Only show schools in these states** is ticked (the default), schools in other states are
+   hidden. The results header says how many were hidden. Untick it to see every state; the
+   preferred states then only count toward the culture-fit score.
+3. **Run Match**. All schools are fetched in parallel (progress bar; **Cancel** stops early).
+4. Results appear as **Cards**: tier, public/private, selectivity, setting and Greek-life badges, key
+   stats, and why the school got its tier and culture score. Switch to **Table** for a compact,
+   column-sortable list. **Sort by** offers best match (Safety → Target → Reach, best culture fit
+   first), culture fit, acceptance rate, enrollment or name.
+5. The **Filters** tab narrows the list by academic fit, size, setting, selectivity, public/private
+   and Greek life. Tick several boxes in a group to allow any of them; nothing ticked means "any".
+6. **View details** on a card (or double-click a table row) shows every field with its source badge
+   (source · year), the GPA chart, admit rate by round, what the school weighs (CDS C7), and buttons to
+   open Niche, Peterson's, BigFuture, College Transitions, the CDS document and the school site in
+   your browser.
 
-Profiles are saved/loaded as JSON files wherever you choose (*File* menu). Results can be exported to
-CSV or PDF on demand.
+Profiles are saved/loaded as JSON files wherever you choose (**Profile** menu, top right). Results can
+be exported to CSV or PDF on demand (**Export** menu); exports contain only the schools currently
+shown.
 
 ## How the tiers work
 

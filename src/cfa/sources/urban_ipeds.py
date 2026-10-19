@@ -18,6 +18,7 @@ from cfa.sources.http import HttpClient
 from cfa.sources.labels import URBAN_TEST_POLICY, format_phone, locale_label
 
 SOURCE = "IPEDS (Urban)"
+CONTROL_LABELS = {1: "Public", 2: "Private nonprofit", 3: "Private for-profit"}
 MAX_PAGES = 5
 
 
@@ -38,6 +39,7 @@ class _Directory(BaseModel):
     phone_number: str | None = None
     url_school: str | None = None
     urban_centric_locale: int | None = None
+    inst_control: int | None = None
 
 
 class _AdmEnroll(BaseModel):
@@ -117,6 +119,7 @@ def _parse_directory(rows: list[dict[str, Any]], year: str) -> dict[str, FieldVa
         "website": _fv(d.url_school, year),
         "locale": _fv(label, year),
         "setting": _fv(setting, year),
+        "control": _fv(CONTROL_LABELS.get(d.inst_control or 0), year),
     }
 
 
@@ -215,7 +218,7 @@ TOPICS: dict[str, tuple[str, Parser, tuple[str, ...]]] = {
     "directory": (
         "directory/{year}/",
         _parse_directory,
-        ("name", "address", "city", "state", "zip", "phone", "website", "locale", "setting"),
+        ("name", "address", "city", "state", "zip", "phone", "website", "locale", "setting", "control"),
     ),
     "admissions-enrollment": (
         "admissions-enrollment/{year}/",

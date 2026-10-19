@@ -31,6 +31,7 @@ async def test_alabama_from_recorded_fixtures(http):
     assert d["applicants_another"].status is Status.NOT_REPORTED
     assert d["name"].value == "The University of Alabama"
     assert d["state"].value == "AL" and d["setting"].ok
+    assert d["control"].value == "Public"
     assert d["applicants_total"].ok and d["admits_total"].value <= d["applicants_total"].value
     assert d["applicants_total"].year == "2024"
     assert d["sat_math_25"].year == "2022"  # walked back four years to find data

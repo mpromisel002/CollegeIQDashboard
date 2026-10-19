@@ -37,6 +37,7 @@ _SPECS: list[FieldSpec] = [
     FieldSpec("website", "Website", "General", Kind.TEXT),
     FieldSpec("locale", "Degree of urbanization", "General", Kind.TEXT),
     FieldSpec("setting", "Campus setting", "General", Kind.TEXT),
+    FieldSpec("control", "Type of institution", "General", Kind.TEXT),
     # Applicants / admits
     FieldSpec("applicants_total", "Applicants (total)", "Admissions", Kind.COUNT),
     FieldSpec("applicants_men", "Applicants (men)", "Admissions", Kind.COUNT),
