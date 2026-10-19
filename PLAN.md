@@ -339,3 +339,14 @@ A per-school free-text and tags field (e.g., "political lean: left-leaning per c
 - v1.2 (2026-10-06): the app repo stays private, so `raw.githubusercontent.com` URLs into it return 404.
   The registry is mirrored to the public repo `mpromisel002/mpromisel002-CollegeIQDashboard-registry` by
   `.github/workflows/registry-sync.yml`, and `REGISTRY_REMOTE_URL` points there.
+- v1.3 (2026-10-19, advisor feedback):
+  - **Preferred states are a hard filter by default.** A profile's preferred states now hide schools
+    in other states (and schools whose state could not be confirmed); "Only show schools in these
+    states" turns it off, after which states only feed the Region culture factor. Codes and full
+    names are both accepted; unrecognized entries are flagged, not silently dropped. Old profiles
+    without the new `only_preferred_states` field load with filtering on.
+  - **UI redesign** modelled on CollegePlannerPro's college search: header bar, Student/Filters
+    sidebar with checkbox filter groups, result cards (badges, stat grid, reasoning) with a table
+    toggle and a sort menu. Fixed light theme (Fusion + stylesheet in `ui/theme.py`).
+  - New `control` field (Public / Private nonprofit / Private for-profit) from the IPEDS directory,
+    shown as a badge and offered as a filter.

@@ -78,15 +78,72 @@ def test_run_flow_with_mocked_adapters(qtbot, window):
     qtbot.waitUntil(lambda: window.table.proxy.rowCount() == 2, timeout=10000)
     rows = {r.record.name: r for r in window.table.visible_rows()}
     assert rows["Beta College"].academic.tier == academic.REACH
-    window.f_tier.setCurrentText("Reach")
+    assert len(window.cards.cards) == 2 and "Showing 2 of 2" in window.count_label.text()
+    window.filters.check("tiers", "Reach")
+    assert window.table.proxy.rowCount() == 1 and len(window.cards.cards) == 1
+    window.filters.clear()
+    window.filters.check("greek", "Has Greek life")
     assert window.table.proxy.rowCount() == 1
-    window.f_tier.setCurrentText("Any")
-    window.f_greek.setCurrentText("Has Greek life")
-    assert window.table.proxy.rowCount() == 1
-    window.f_greek.setCurrentText("Any")
-    window.f_state.setText("TN")
-    assert window.table.proxy.rowCount() == 1
+    window.filters.clear()
+    window.filters.check("settings", "Suburb")
+    window.filters.check("settings", "City")
+    assert window.table.proxy.rowCount() == 2
+    window.filters.clear()
     assert "problem" in window.health_label.text() or "OK" in window.health_label.text()
+
+
+def run_and_wait(qtbot, window, n):
+    window.run_match()
+    qtbot.waitUntil(lambda: window.worker is None and bool(window.table.results_model.rows), timeout=10000)
+    assert len(window.table.results_model.rows) == n
+
+
+def test_preferred_states_hide_other_states(qtbot, window):
+    window.student.states.setText("Tennessee")  # full names work as well as codes
+    run_and_wait(qtbot, window, 2)
+    assert [r.record.name for r in window.table.visible_rows()] == ["Beta College"]
+    assert "in TN" in window.count_label.text() and "1 in other states hidden" in window.count_label.text()
+    window.student.states.setText("tn, al")  # takes effect at once, no re-run needed
+    assert window.table.proxy.rowCount() == 2
+    window.student.states.setText("TN")
+    window.student.only_states.setChecked(False)  # advisor can still look beyond the list
+    assert window.table.proxy.rowCount() == 2
+    window.student.only_states.setChecked(True)
+    assert window.table.proxy.rowCount() == 1
+
+
+def test_preferred_states_none_match_explains(qtbot, window):
+    window.student.states.setText("CA")
+    run_and_wait(qtbot, window, 2)
+    assert window.table.proxy.rowCount() == 0 and window.cards.cards == []
+    assert "None of the 2 schools are in CA" in window.cards.findChild(QLabel, "Empty").text()
+
+
+def test_unknown_state_entries_are_flagged(qtbot):
+    panel = StudentPanel()
+    qtbot.addWidget(panel)
+    panel.states.setText("PA, Pensylvania, NY")
+    assert not panel.states_warning.isHidden()
+    assert "Pensylvania" in panel.states_warning.text()
+    assert panel.preferred_states() == (["PA", "NY"], True)
+    panel.states.setText("PA NY")
+    assert panel.states_warning.isHidden()
+
+
+def test_unknown_school_state_is_hidden_when_filtering(qtbot):
+    from cfa.ui.results_table import ResultsTable
+
+    table = ResultsTable()
+    qtbot.addWidget(table)
+    profile = StudentProfile()
+    recs = [make_record(1, "Known", state="PA"), make_record(2, "Unknown")]
+    table.results_model.set_rows(
+        [ResultRow(r, academic.classify(profile, r), culture.score(profile, r)) for r in recs]
+    )
+    table.proxy.set_filters(states={"PA"})
+    assert [r.record.name for r in table.visible_rows()] == ["Known"]
+    table.proxy.set_filters(states=set())
+    assert table.proxy.rowCount() == 2
 
 
 def test_worker_exception_shows_toast(qtbot, monkeypatch):

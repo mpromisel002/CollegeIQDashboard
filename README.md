@@ -46,7 +46,7 @@ pyinstaller packaging/cfa.spec --noconfirm           # build dist/CollegeFitAdvi
 
 On Linux, Qt needs `libegl1 libgl1 libxkbcommon0`; tests run with `QT_QPA_PLATFORM=offscreen`.
 
-Set `CFA_SCORECARD_API_KEY` in the environment, or save the key in *Tools → Settings*.
+Set `CFA_SCORECARD_API_KEY` in the environment, or save the key in the app's **Settings** (top right).
 
 ### Layout
 

@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QGroupBox,
     QHBoxLayout,
+    QLabel,
     QLineEdit,
     QPlainTextEdit,
     QPushButton,
@@ -20,6 +21,8 @@ from PySide6.QtWidgets import (
 )
 
 from cfa.models.student import Athletics, GreekDirection, Setting, SizePref, StudentProfile
+from cfa.states import parse_states
+from cfa.ui.theme import named
 
 IMPORTANCE = ["0 - Don't care", "1 - Low", "2 - Medium", "3 - High"]
 
@@ -43,6 +46,7 @@ def _optional_double(lo: float, hi: float, step: float) -> QDoubleSpinBox:
     s.setSingleStep(step)
     s.setSpecialValueText("Not set")
     s.setValue(lo - step)
+    s.setButtonSymbols(QDoubleSpinBox.ButtonSymbols.NoButtons)  # typed, not clicked
     return s
 
 
@@ -52,6 +56,7 @@ def _optional_int(lo: int, hi: int, step: int) -> QSpinBox:
     s.setSingleStep(step)
     s.setSpecialValueText("Not set")
     s.setValue(lo - step)
+    s.setButtonSymbols(QSpinBox.ButtonSymbols.NoButtons)
     return s
 
 
@@ -59,6 +64,7 @@ class StudentPanel(QWidget):
     run_requested = Signal()
     save_requested = Signal()
     load_requested = Signal()
+    states_changed = Signal()  # preferred states or the "only these states" switch changed
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -72,7 +78,14 @@ class StudentPanel(QWidget):
         self.submits.setChecked(True)
         self.major = QLineEdit()
         self.states = QLineEdit()
-        self.states.setPlaceholderText("e.g. AL, TN, GA")
+        self.states.setPlaceholderText("e.g. PA, NY, MA or Pennsylvania")
+        self.only_states = QCheckBox("Only show schools in these states")
+        self.only_states.setChecked(True)
+        self.states_warning = named(QLabel(), "Warning")
+        self.states_warning.setWordWrap(True)
+        self.states_warning.hide()
+        self.states.textChanged.connect(self._states_edited)
+        self.only_states.toggled.connect(self.states_changed)
         self.size_combo = _enum_combo([s.value for s in SizePref])
         self.size_imp = _importance()
         self.setting = _enum_combo([s.value for s in Setting])
@@ -91,6 +104,7 @@ class StudentPanel(QWidget):
         self.notes.setFixedHeight(60)
 
         acad = QGroupBox("Academics")
+        acad.setObjectName("Section")
         f1 = QFormLayout(acad)
         f1.addRow("Student name", self.name)
         f1.addRow("Unweighted GPA (4.0)", self.gpa)
@@ -101,10 +115,17 @@ class StudentPanel(QWidget):
         f1.addRow("", self.submits)
         f1.addRow("Intended major", self.major)
 
-        prefs = QGroupBox("Preferences (importance 0-3)")
+        where = QGroupBox("Location")
+        where.setObjectName("Section")
+        f0 = QFormLayout(where)
+        f0.addRow("Preferred states", self.states)
+        f0.addRow("", self.states_warning)
+        f0.addRow("", self.only_states)
+        f0.addRow("Region importance", self.region_imp)
+
+        prefs = QGroupBox("Campus preferences (importance 0-3)")
+        prefs.setObjectName("Section")
         f2 = QFormLayout(prefs)
-        f2.addRow("Preferred states", self.states)
-        f2.addRow("Region importance", self.region_imp)
         f2.addRow("Size", self._pair(self.size_combo, self.size_imp))
         f2.addRow("Setting", self._pair(self.setting, self.setting_imp))
         f2.addRow("Greek life", self._pair(self.greek_dir, self.greek_imp))
@@ -115,7 +136,7 @@ class StudentPanel(QWidget):
         f2.addRow("", self.ea)
         f2.addRow("Notes", self.notes)
 
-        self.run_btn = QPushButton("Run Match")
+        self.run_btn = named(QPushButton("Run Match"), "Run")
         self.run_btn.setDefault(True)
         self.run_btn.clicked.connect(self.run_requested)
         save = QPushButton("Save profile…")
@@ -125,7 +146,9 @@ class StudentPanel(QWidget):
 
         inner = QWidget()
         v = QVBoxLayout(inner)
+        v.setContentsMargins(4, 4, 8, 4)
         v.addWidget(acad)
+        v.addWidget(where)
         v.addWidget(prefs)
         v.addStretch(1)
         scroll = QScrollArea()
@@ -136,9 +159,23 @@ class StudentPanel(QWidget):
         buttons.addWidget(save)
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(8)
         outer.addWidget(scroll, 1)
         outer.addLayout(buttons)
         outer.addWidget(self.run_btn)
+
+    def preferred_states(self) -> tuple[list[str], bool]:
+        codes, _unknown = parse_states(self.states.text())
+        return codes, self.only_states.isChecked()
+
+    def _states_edited(self) -> None:
+        _codes, unknown = parse_states(self.states.text())
+        if unknown:
+            self.states_warning.setText(
+                "Not a U.S. state, ignored: " + ", ".join(unknown) + ". Use codes like PA or full names."
+            )
+        self.states_warning.setVisible(bool(unknown))
+        self.states_changed.emit()
 
     @staticmethod
     def _pair(a: QWidget, b: QWidget) -> QWidget:
@@ -167,6 +204,7 @@ class StudentPanel(QWidget):
             submits_tests=self.submits.isChecked(),
             intended_major=self.major.text().strip(),
             preferred_states=self.states.text(),  # type: ignore[arg-type]
+            only_preferred_states=self.only_states.isChecked(),
             size_pref=SizePref(self.size_combo.currentText()),
             size_importance=self.size_imp.currentIndex(),
             setting_pref=Setting(self.setting.currentText()),
@@ -196,6 +234,7 @@ class StudentPanel(QWidget):
         self.submits.setChecked(p.submits_tests)
         self.major.setText(p.intended_major)
         self.states.setText(", ".join(p.preferred_states))
+        self.only_states.setChecked(p.only_preferred_states)
         self.size_combo.setCurrentText(p.size_pref.value)
         self.size_imp.setCurrentIndex(p.size_importance)
         self.setting.setCurrentText(p.setting_pref.value)

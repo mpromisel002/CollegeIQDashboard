@@ -35,11 +35,23 @@ def test_gpa_bins_match_spec():
 def test_profile_roundtrip(tmp_path):
     p = StudentProfile(name="A", gpa_unweighted=3.7, sat_ebrw=650, sat_math=700, preferred_states="al, tn")
     assert p.preferred_states == ["AL", "TN"]
+    assert p.only_preferred_states is True
     assert p.sat_total == 1350
     path = tmp_path / "p.json"
     p.save(path)
     assert StudentProfile.load(path) == p
     assert json.loads(path.read_text())["gpa_unweighted"] == 3.7
+
+
+def test_preferred_states_parsing():
+    from cfa.states import parse_states
+
+    assert parse_states("pa, New York; ma") == (["PA", "NY", "MA"], [])
+    assert parse_states("PA NY") == (["PA", "NY"], [])
+    assert parse_states("Washington D.C., north carolina") == (["DC", "NC"], [])
+    assert parse_states("PA, ZZ, pa") == (["PA"], ["ZZ"])
+    assert StudentProfile(preferred_states="Pennsylvania, XX").preferred_states == ["PA"]
+    assert StudentProfile.model_validate({"preferred_states": ["ny", "NY"]}).preferred_states == ["NY"]
 
 
 @pytest.mark.parametrize(
