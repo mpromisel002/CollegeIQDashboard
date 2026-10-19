@@ -24,14 +24,24 @@ fallbacks come from IPEDS instead. **Test connections** shows each source's heal
    While **Only show schools in these states** is ticked (the default), schools in other states are
    hidden. The results header says how many were hidden. Untick it to see every state; the
    preferred states then only count toward the culture-fit score.
-3. **Run Match**. All schools are fetched in parallel (progress bar; **Cancel** stops early).
-4. Results appear as **Cards**: tier, public/private, selectivity, setting and Greek-life badges, key
+3. Choose what to **Search** (above Run Match):
+   - **All four-year colleges** (default): every active public or private nonprofit college that
+     mainly awards bachelor's degrees in the preferred states — or the whole country if no states
+     are set or "Only show schools in these states" is unticked. Data comes live from IPEDS and, with
+     a key, College Scorecard. Schools on the curated list also get their Common Data Set and show a
+     **Full data** badge; the rest show **Federal data only** (no GPA spread, Greek life or ED/EA
+     numbers, because those exist only in a school's CDS).
+   - **Curated list only (full data)**: just the schools in the registry, all with their CDS.
+4. **Run Match** (progress bar; **Cancel** stops early). A few states take under a minute; the whole
+   country (about 1,700 colleges) takes a few minutes because IPEDS is slow to answer some tables.
+   If you add a state after a search, the header says it wasn't searched yet; run the match again.
+5. Results appear as **Cards**, 20 per page: tier, public/private, selectivity, setting and Greek-life badges, key
    stats, and why the school got its tier and culture score. Switch to **Table** for a compact,
    column-sortable list. **Sort by** offers best match (Safety → Target → Reach, best culture fit
    first), culture fit, acceptance rate, enrollment or name.
-5. The **Filters** tab narrows the list by academic fit, size, setting, selectivity, public/private
-   and Greek life. Tick several boxes in a group to allow any of them; nothing ticked means "any".
-6. **View details** on a card (or double-click a table row) shows every field with its source badge
+6. The **Filters** tab narrows the list by academic fit, size, setting, selectivity, public/private,
+   Greek life and how complete the data is. Tick several boxes in a group to allow any of them; nothing ticked means "any".
+7. **View details** on a card (or double-click a table row) shows every field with its source badge
    (source · year), the GPA chart, admit rate by round, what the school weighs (CDS C7), and buttons to
    open Niche, Peterson's, BigFuture, College Transitions, the CDS document and the school site in
    your browser.
@@ -45,11 +55,16 @@ shown.
 - **Reach** — admit rate under 15 % (always), or the student is below the school's 25th percentile on
   tests, or in the bottom 25 % of its GPA distribution.
 - **Safety** — admit rate at least 50 %, tests above the 75th percentile (or not submitting tests with
-  a GPA above the median), and GPA in the top 25 %.
+  a GPA above the median), and GPA in the top 25 %. For a school that publishes no GPA distribution
+  (most schools outside the curated list), tests above the 75th percentile and the admit rate are
+  enough; the reason says "school publishes no GPA data".
 - **Target** — everything else.
 - **Unclassified** — not enough data (no admit rate, or neither GPA distribution nor comparable tests).
 
-SAT comparisons add the section 25th/75th percentiles (an approximation of the composite range).
+SAT comparisons add the section 25th/75th percentiles (an approximation of the composite range). A
+school's SAT or ACT range is ignored when under 5 % of its enrolled students submitted that test (a
+"middle 50 %" from a handful of students says nothing). Without a Scorecard key, test ranges for
+schools outside the curated list come from IPEDS, whose newest test data is 2022.
 Thresholds are in `src/cfa/config.py`.
 
 Culture fit is the importance-weighted average of the factors you set; factors a school does not

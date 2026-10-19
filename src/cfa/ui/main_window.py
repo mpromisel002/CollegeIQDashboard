@@ -35,7 +35,7 @@ from cfa import __version__, config
 from cfa.models.college import FIELDS, CollegeRecord
 from cfa.models.field_value import Status
 from cfa.models.student import StudentProfile
-from cfa.pipeline import RunResult, parse_pool, run_all
+from cfa.pipeline import RunResult, parse_pool, run_all, run_search
 from cfa.scoring import academic, culture
 from cfa.sources.http import HttpClient
 from cfa.sources.registry import Registry, RegistryLoad, load_bundled, load_registry
@@ -70,6 +70,8 @@ class MainWindow(QMainWindow):
         self.registry: Registry = Registry(schema_version=1, schools=[])
         self.records: list[CollegeRecord] = []
         self.worker: Worker | None = None
+        # States the last all-colleges search covered ([] = every state); None = curated list run.
+        self.searched_states: list[str] | None = None
         self.settings = QSettings("CollegeFitAdvisor", "CollegeFitAdvisor")
 
         # Left sidebar: the student's profile and the results filters.
@@ -262,7 +264,9 @@ class MainWindow(QMainWindow):
         self.registry = load.registry
         self.show_banner(load.warning)
         origin = {"remote": "online", "bundled": "built-in copy", "empty": "unavailable"}[load.origin]
-        self.registry_label.setText(f"{len(self.registry.schools)} schools · school list {origin}")
+        self.registry_label.setText(
+            f"Curated list: {len(self.registry.schools)} schools with full data ({origin})"
+        )
 
     # ----------------------------------------------------------------- profiles
     def save_profile(self) -> None:
@@ -294,8 +298,21 @@ class MainWindow(QMainWindow):
             self.show_toast("The school list has not loaded yet.")
             return
         registry, key = self.registry, config.scorecard_api_key()
+        states, only = self.student.preferred_states()
+        search_all = unitids is None and self.student.search_all()
 
         def job(progress, cancel) -> RunResult:
+            if search_all:
+                return asyncio.run(
+                    run_search(
+                        registry,
+                        states=states if only else [],
+                        api_key=key,
+                        progress=progress,
+                        cancel=cancel,
+                        executor=parse_pool(),
+                    )
+                )
             return asyncio.run(
                 run_all(
                     registry,
@@ -344,6 +361,8 @@ class MainWindow(QMainWindow):
             self.records = [by_id.get(r.unitid, r) for r in self.records]
         else:
             self.records = result.records
+            self.searched_states = result.searched_states
+            self.show_banner(result.note or None)
         self.rescore()
         self._update_health()
         if result.cancelled:
@@ -403,6 +422,14 @@ class MainWindow(QMainWindow):
             hidden = proxy.hidden_by_state()
             if hidden:
                 text += f" · {hidden} in other states hidden"
+        searched = set(self.searched_states or [])
+        if searched:
+            unsearched = sorted(proxy.states - searched) if proxy.states else ["other states"]
+            if unsearched:
+                text += (
+                    f" · Only {', '.join(sorted(searched))} searched: press Run Match to include "
+                    + ", ".join(unsearched)
+                )
         self.count_label.setText(text)
         empty = "No schools match these filters."
         if not rows and proxy.states:

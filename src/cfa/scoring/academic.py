@@ -69,18 +69,27 @@ def test_position(student: StudentProfile, college: CollegeRecord) -> tuple[str 
     sat = student.sat_total
     e25, e75 = college.num("sat_ebrw_25"), college.num("sat_ebrw_75")
     m25, m75 = college.num("sat_math_25"), college.num("sat_math_75")
-    if sat is not None and None not in (e25, e75, m25, m75):
+    few_sat, few_act = _few_submitters(college, "sat_submit_pct"), _few_submitters(college, "act_submit_pct")
+    if sat is not None and None not in (e25, e75, m25, m75) and not few_sat:
         lo, hi = e25 + m25, e75 + m75  # type: ignore[operator]
         pos = BELOW if sat < lo else ABOVE if sat > hi else MIDDLE
         positions.append((rank[pos], pos, f"SAT {sat} vs ~{int(lo)}-{int(hi)}"))
     a25, a75 = college.num("act_25"), college.num("act_75")
-    if student.act is not None and a25 is not None and a75 is not None:
+    if student.act is not None and a25 is not None and a75 is not None and not few_act:
         pos = BELOW if student.act < a25 else ABOVE if student.act > a75 else MIDDLE
         positions.append((rank[pos], pos, f"ACT {student.act} vs {int(a25)}-{int(a75)}"))
     if not positions:
+        if few_sat or few_act:
+            return None, f"too few enrolled students submitted scores (under {config.MIN_SUBMIT_PCT:g}%)"
         return None, "no comparable test scores"
     best = max(positions)
     return best[1], best[2]
+
+
+def _few_submitters(college: CollegeRecord, key: str) -> bool:
+    """A middle-50% range from a handful of students (e.g. 1 of 600) says nothing about the school."""
+    pct = college.num(key)
+    return pct is not None and pct < config.MIN_SUBMIT_PCT
 
 
 def classify(student: StudentProfile, college: CollegeRecord) -> AcademicFit:
@@ -118,6 +127,13 @@ def classify(student: StudentProfile, college: CollegeRecord) -> AcademicFit:
         tests = test_note if pos == ABOVE else "not using tests, GPA above median"
         fit.tier = SAFETY
         fit.reason = f"Safety: admit rate {rate:g}%, {tests}, GPA ~{pct:g}th percentile"
+        return fit
+    # Most schools outside the curated list publish no GPA distribution (it comes only from the
+    # Common Data Set). There, tests above the 75th percentile and a high admit rate are enough.
+    school_has_no_gpa = pct is None and student.gpa_unweighted is not None
+    if rate >= config.SAFETY_ADMIT_RATE_PCT and pos == ABOVE and school_has_no_gpa:
+        fit.tier = SAFETY
+        fit.reason = f"Safety: admit rate {rate:g}%, {test_note} ({ABOVE}); school publishes no GPA data"
         return fit
     parts = [f"admit rate {rate:g}%"]
     if pct is not None:

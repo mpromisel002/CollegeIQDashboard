@@ -64,9 +64,16 @@ def window(qtbot, monkeypatch):
         kw["progress"](1, 2, "Alpha U")
         return RunResult(records=sample_records())
 
+    async def fake_run_search(registry, **kw):
+        window.search_calls.append(kw["states"])
+        return RunResult(records=sample_records(), searched_states=kw["states"])
+
     monkeypatch.setattr(mw, "run_all", fake_run_all)
+    monkeypatch.setattr(mw, "run_search", fake_run_search)
     monkeypatch.setattr(mw, "parse_pool", lambda: None)
     w = mw.MainWindow(load_remote_registry=False)
+    w.search_calls = []
+    window = w
     qtbot.addWidget(w)
     return w
 
@@ -151,6 +158,7 @@ def test_worker_exception_shows_toast(qtbot, monkeypatch):
         raise RuntimeError("kaboom")
 
     monkeypatch.setattr(mw, "run_all", boom)
+    monkeypatch.setattr(mw, "run_search", boom)
     monkeypatch.setattr(mw, "parse_pool", lambda: None)
     w = mw.MainWindow(load_remote_registry=False)
     qtbot.addWidget(w)
@@ -209,3 +217,56 @@ def test_network_off_shows_source_unavailable(qtbot):
     dlg = CollegeDetail(row)
     qtbot.addWidget(dlg)
     assert sum(lbl.text() == "Source unavailable" for lbl in dlg.findChildren(QLabel)) > 10
+
+
+def test_cards_are_paged(qtbot):
+    from cfa.ui.results_cards import ResultCards
+
+    cards = ResultCards()
+    qtbot.addWidget(cards)
+    profile = StudentProfile()
+    rows = [
+        ResultRow(r, academic.classify(profile, r), culture.score(profile, r))
+        for r in (make_record(i, f"School {i:02d}", state="PA") for i in range(45))
+    ]
+    cards.set_rows(rows)
+    assert len(cards.cards) == 20 and cards.page_label.text() == "1–20 of 45"
+    assert not cards.prev_btn.isEnabled() and cards.next_btn.isEnabled()
+    cards.next_btn.click()
+    cards.next_btn.click()
+    assert len(cards.cards) == 5 and cards.page_label.text() == "41–45 of 45"
+    assert not cards.next_btn.isEnabled()
+    cards.set_rows(rows[:3])  # new results start again on page 1, without a pager
+    assert len(cards.cards) == 3 and cards.pager.isHidden()
+
+
+def test_search_covers_preferred_states_and_says_what_was_not_searched(qtbot, window):
+    window.student.states.setText("TN")
+    run_and_wait(qtbot, window, 2)
+    assert window.search_calls == [["TN"]]
+    window.student.states.setText("TN, AL")
+    assert "Only TN searched: press Run Match to include AL" in window.count_label.text()
+    window.student.only_states.setChecked(False)
+    assert "include other states" in window.count_label.text()
+
+
+def test_curated_scope_uses_the_list(qtbot, window):
+    from cfa.ui.student_panel import SCOPE_CURATED
+
+    window.student.scope.setCurrentText(SCOPE_CURATED)
+    run_and_wait(qtbot, window, 2)
+    assert window.search_calls == []
+    assert "searched" not in window.count_label.text()
+
+
+def test_federal_only_badge_and_filter(qtbot, window):
+    from cfa.ui.results_cards import badges
+
+    run_and_wait(qtbot, window, 2)
+    rows = window.table.visible_rows()
+    texts = [b.text() for b in badges(rows[0])]
+    assert "Federal data only" in texts
+    rows[0].record.links["cds"] = "https://example.edu/cds.pdf"
+    assert "Full data" in [b.text() for b in badges(rows[0])]
+    window.filters.check("data_level", "Full")
+    assert window.table.proxy.rowCount() == 1

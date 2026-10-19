@@ -147,3 +147,30 @@ def test_size_band():
     assert culture.size_band(4999) is SizePref.SMALL
     assert culture.size_band(5000) is SizePref.MEDIUM
     assert culture.size_band(30000) is SizePref.HUGE
+
+
+def test_safety_on_tests_when_school_publishes_no_gpa():
+    no_gpa = school()
+    del no_gpa.fields["gpa_dist"]
+    s = StudentProfile(gpa_unweighted=3.6, sat_ebrw=700, sat_math=700)
+    fit = academic.classify(s, no_gpa)
+    assert fit.tier == academic.SAFETY and "publishes no GPA" in fit.reason
+    # middle of the range is still Target, and a low admit rate still is not Safety
+    assert academic.classify(StudentProfile(gpa_unweighted=3.6, sat_ebrw=600, sat_math=600), no_gpa).tier == (
+        academic.TARGET
+    )
+    no_gpa.fields["acceptance_rate"] = school(acceptance_rate=40.0).fields["acceptance_rate"]
+    assert academic.classify(s, no_gpa).tier == academic.TARGET
+
+
+def test_test_ranges_ignored_when_few_students_submitted():
+    tiny = school(sat_ebrw_25=440, sat_ebrw_75=440, sat_math_25=430, sat_math_75=430, sat_submit_pct=0.2)
+    s = StudentProfile(gpa_unweighted=3.7, sat_ebrw=650, sat_math=640)
+    fit = academic.classify(s, tiny)
+    assert fit.test_position is None and "SAT" not in fit.reason
+    # ACT still counts if enough students sent it
+    s_act = StudentProfile(gpa_unweighted=3.7, sat_ebrw=650, sat_math=640, act=33)
+    assert (
+        academic.classify(s_act, school(sat_submit_pct=0.2, act_submit_pct=40.0)).test_position
+        == academic.ABOVE
+    )

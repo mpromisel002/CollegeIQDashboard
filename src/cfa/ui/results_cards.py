@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from cfa.models.college import CollegeRecord
 from cfa.models.field_value import FieldValue
 from cfa.scoring.academic import REACH, SAFETY, TARGET
 from cfa.scoring.culture import greek_pct
@@ -52,7 +53,22 @@ def badges(row: ResultRow) -> list[QLabel]:
         out.append(
             pill("Greek life" if g > 0 else "No Greek life", "neutral", f"About {g:.0f}% in Greek life")
         )
+    if has_cds(r):
+        out.append(pill("Full data", "cds", "Includes the school's Common Data Set: GPA, Greek life, ED/EA"))
+    else:
+        out.append(
+            pill(
+                "Federal data only",
+                "federal",
+                "Not on the curated list: GPA spread, Greek life and ED/EA numbers come only from a "
+                "school's Common Data Set, so they aren't shown here.",
+            )
+        )
     return out
+
+
+def has_cds(r: CollegeRecord) -> bool:
+    return bool(r.links.get("cds"))
 
 
 def _range(lo: FieldValue, hi: FieldValue) -> str | None:
@@ -202,38 +218,74 @@ def _esc(text: str) -> str:
     return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
-class ResultCards(QScrollArea):
+class ResultCards(QWidget):
+    """Cards for the visible results, a page at a time (building thousands of cards would be slow)."""
+
     details_requested = Signal(object)  # ResultRow
+    PAGE_SIZE = 20
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.setWidgetResizable(True)
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.page = 0
+        self.area = QScrollArea()
+        self.area.setWidgetResizable(True)
+        self.area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.body = QWidget()
         self.body.setObjectName("Page")
         self.list = QVBoxLayout(self.body)
         self.list.setContentsMargins(0, 0, 8, 0)
         self.list.setSpacing(12)
-        self.setWidget(self.body)
+        self.area.setWidget(self.body)
+        self.page_label = named(QLabel(), "Muted")
+        self.prev_btn = QPushButton("Previous")
+        self.next_btn = QPushButton("Next")
+        self.prev_btn.clicked.connect(lambda: self.show_page(self.page - 1))
+        self.next_btn.clicked.connect(lambda: self.show_page(self.page + 1))
+        pager = QHBoxLayout()
+        pager.addWidget(self.page_label)
+        pager.addStretch(1)
+        pager.addWidget(self.prev_btn)
+        pager.addWidget(self.next_btn)
+        self.pager = QWidget()
+        self.pager.setLayout(pager)
+        v = QVBoxLayout(self)
+        v.setContentsMargins(0, 0, 0, 0)
+        v.addWidget(self.area, 1)
+        v.addWidget(self.pager)
         self.cards: list[ResultCard] = []
+        self.rows: list[ResultRow] = []
+        self.empty_text = ""
         self.set_rows([], "Run a match to see schools here.")
 
     def set_rows(self, rows: list[ResultRow], empty_text: str = "No schools match these filters.") -> None:
+        self.rows = rows
+        self.empty_text = empty_text
+        self.show_page(0)
+
+    def show_page(self, page: int) -> None:
+        pages = max(1, -(-len(self.rows) // self.PAGE_SIZE))
+        self.page = max(0, min(page, pages - 1))
         while self.list.count():
             item = self.list.takeAt(0)
             widget = item.widget() if item is not None else None
             if widget is not None:
                 widget.deleteLater()
         self.cards = []
-        if not rows:
-            msg = named(QLabel(empty_text), "Empty")
+        if not self.rows:
+            msg = named(QLabel(self.empty_text), "Empty")
             msg.setAlignment(Qt.AlignmentFlag.AlignCenter)
             msg.setWordWrap(True)
             self.list.addWidget(msg)
-        for row in rows:
+        start = self.page * self.PAGE_SIZE
+        for row in self.rows[start : start + self.PAGE_SIZE]:
             card = ResultCard(row)
             card.details_requested.connect(self.details_requested)
             self.cards.append(card)
             self.list.addWidget(card)
         self.list.addStretch(1)
-        self.verticalScrollBar().setValue(0)
+        self.area.verticalScrollBar().setValue(0)
+        end = min(start + self.PAGE_SIZE, len(self.rows))
+        self.page_label.setText(f"{start + 1}–{end} of {len(self.rows)}" if self.rows else "")
+        self.prev_btn.setEnabled(self.page > 0)
+        self.next_btn.setEnabled(self.page < pages - 1)
+        self.pager.setVisible(len(self.rows) > self.PAGE_SIZE)

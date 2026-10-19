@@ -350,3 +350,10 @@ A per-school free-text and tags field (e.g., "political lean: left-leaning per c
     toggle and a sort menu. Fixed light theme (Fusion + stylesheet in `ui/theme.py`).
   - New `control` field (Public / Private nonprofit / Private for-profit) from the IPEDS directory,
     shown as a badge and offered as a filter.
+- v1.4 (2026-10-20): **search every four-year college, not only the registry.** "All four-year
+  colleges" (default) lists colleges from the IPEDS directory for the preferred states (or the whole
+  country) and loads IPEDS/Scorecard in bulk; the registry still supplies CDS documents, so those
+  schools show "Full data" and the rest "Federal data only". R2 is unchanged (nothing stored). Scoring
+  changes needed for schools without a CDS: Safety may rest on tests + admit rate when the school
+  publishes no GPA distribution, and SAT/ACT ranges are ignored when under 5 % of enrollees submitted
+  that test. Cards are paged (20 per page).
