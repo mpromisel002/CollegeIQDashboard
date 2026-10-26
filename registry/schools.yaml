@@ -1186,3 +1186,723 @@ schools:
       - year: "2025-2026"
         url: https://www.unk.edu/factbook/_files/cds-2025-26-pdf_final.pdf
         format: pdf
+  - unitid: 217864
+    name: "Citadel Military College of South Carolina"
+    cds:
+      - year: "2025-2026"
+        url: https://www.citadel.edu/institutional-research/wp-content/uploads/sites/75/CDS-2025-26-Excel_For-Website.xlsx
+        format: xlsx
+  - unitid: 208646
+    name: "Eastern Oregon University"
+    cds:
+      - year: "2025-2026"
+        url: https://static.eou.edu/ir/CDS/CDS_2025_26.pdf
+        format: pdf
+  - unitid: 170082
+    name: "Grand Valley State University"
+    cds:
+      - year: "2025-2026"
+        url: https://www.gvsu.edu/cms4/asset/EFAB4AD2-A926-8D16-A5685AB71E0C7DC3/cds_2025-2026.xlsx
+        format: xlsx
+  - unitid: 182290
+    name: "University of Nevada-Reno"
+    cds:
+      - year: "2024-2025"
+        url: https://dataden.unr.edu/Resources/CDS/CDS_2024-2025.pdf
+        format: pdf
+  - unitid: 163286
+    name: "University of Maryland-College Park"
+    cds:
+      - year: "2025-2026"
+        url: https://irpa.umd.edu/InstitutionalData/CommonDataSet/CDS_2025-2026.xlsx
+        format: xlsx
+  - unitid: 196097
+    name: "Stony Brook University"
+    cds:
+      - year: "2025-2026"
+        url: https://www.stonybrook.edu/irpe/_media/Common_data_sets/CDS_2025-2026.xlsx
+        format: xlsx
+  - unitid: 154095
+    name: "University of Northern Iowa"
+    cds:
+      - year: "2025-2026"
+        url: https://ie.uni.edu/sites/default/files/inline-uploads/CDS-2025-2026%20Updated%208.18.26.pdf
+        format: pdf
+  - unitid: 185590
+    name: "Montclair State University"
+    cds:
+      - year: "2025-2026"
+        url: https://irdata.montclair.edu/institutionalresearch/CDS/CDS%202025-2026.pdf
+        format: pdf
+  - unitid: 203128
+    name: "Hiram College"
+    cds:
+      - year: "2025-2026"
+        url: https://www.hiram.edu/wp-content/uploads/2025/12/Hiram-College-CDS_2025-2026-5.4.pdf
+        format: pdf
+  - unitid: 189097
+    name: "Barnard College"
+    cds:
+      - year: "2023-2024"
+        url: https://barnard.edu/sites/default/files/inline-files/CDS_2023-2024-Barnard%20College_0.pdf
+        format: pdf
+  - unitid: 234085
+    name: "Virginia Military Institute"
+    cds:
+      - year: "2025-2026"
+        url: https://www.vmi.edu/wp-content/uploads/2026/06/CDS-2025-26-Tuition-Update.pdf
+        format: pdf
+  - unitid: 146719
+    name: "Loyola University Chicago"
+    cds:
+      - year: "2025-2026"
+        url: https://www.luc.edu/media/lucedu/oie/CDS%202025-26%20-%20Loyola%20University%20Chicago%20-%20Final_af.pdf
+        format: pdf
+  - unitid: 201645
+    name: "Case Western Reserve University"
+    cds:
+      - year: "2025-2026"
+        url: https://case.edu/ir/sites/default/files/2026-02/CDS%202025-26%20Adjusted%20Final.pdf
+        format: pdf
+  - unitid: 216931
+    name: "Wilkes University"
+    cds:
+      - year: "2025-2026"
+        url: https://www.wilkes.edu/about-wilkes/offices-and-administration/institutional-research/_assets/Wilkes%20University%20CDS_2025-26.pdf
+        format: pdf
+  - unitid: 195720
+    name: "St. John Fisher University"
+    cds:
+      - year: "2025-2026"
+        url: https://www.sjf.edu/media/services/institutional-research/documents/CommonDataSet.pdf
+        format: pdf
+  - unitid: 232043
+    name: "Eastern Mennonite University"
+    cds:
+      - year: "2025-2026"
+        url: https://emu.edu/ir/docs/EMU%20CDS%202025-2026%20public.pdf
+        format: pdf
+  - unitid: 219000
+    name: "Augustana University"
+    cds:
+      - year: "2025-2026"
+        url: https://www.augie.edu/sites/default/files/documents/2026-06/2025-2026-CDS.xlsx
+        format: xlsx
+  - unitid: 216366
+    name: "Thomas Jefferson University"
+    cds:
+      - year: "2025-2026"
+        url: https://www.jefferson.edu/content/dam/academic/east-falls/institutional-research-and-planning/tju-common-data-set-2025-2026.xlsx
+        format: xlsx
+  - unitid: 236939
+    name: "Washington State University"
+    cds:
+      - year: "2025-2026"
+        url: https://wpcdn.web.wsu.edu/wp-provost/uploads/sites/3285/2026/05/CDS_2025-2026-PDF_For-Website.pdf
+        format: pdf
+  - unitid: 230807
+    name: "Westminster University"
+    cds:
+      - year: "2025-2026"
+        url: https://westminsteru.edu/_resources/files/default-source/common-data-set-2025-2026.xlsx
+        format: xlsx
+  - unitid: 183044
+    name: "University of New Hampshire-Main Campus"
+    cds:
+      - year: "2024-2025"
+        url: https://www.unh.edu/institutional-research/sites/default/files/media/2025-02/cds-2024-2025-2.12.25_0.pdf
+        format: pdf
+  - unitid: 184782
+    name: "Rowan University"
+    cds:
+      - year: "2025-2026"
+        url: https://sites.rowan.edu/academic-affairs/ida/_docs/rowan_university_cds.pdf
+        format: pdf
+  - unitid: 207500
+    name: "University of Oklahoma-Norman Campus"
+    cds:
+      - year: "2025-2026"
+        url: https://www.ou.edu/content/dam/irr/docs/common-data-sets/norman-campus-only/2025-26-nc/University%20of%20Oklahoma,%202025-26%20CDS.pdf
+        format: pdf
+  - unitid: 237525
+    name: "Marshall University"
+    cds:
+      - year: "2025-2026"
+        url: https://www.marshall.edu/wp-content/uploads/sites/458/CDS-PDF-2025-2026-Excel_finalaccess.pdf
+        format: pdf
+  - unitid: 213349
+    name: "Kutztown University of Pennsylvania"
+    cds:
+      - year: "2025-2026"
+        url: https://www.kutztown.edu/Departments-Offices/G-L/InstitutionalResearch/Documents/CDS_KU_2025%20COMMON%20DATA%20SET.pdf
+        format: pdf
+  - unitid: 221351
+    name: "Rhodes College"
+    cds:
+      - year: "2025-2026"
+        url: https://www.rhodes.edu/sites/default/files/2026-05/CDS_2025-26_(New_Update).xlsx
+        format: xlsx
+  - unitid: 192703
+    name: "Manhattan University"
+    cds:
+      - year: "2025-2026"
+        url: https://content.manhattan.edu/institutional-research/2025-26-CDS.pdf
+        format: pdf
+  - unitid: 212106
+    name: "Duquesne University"
+    cds:
+      - year: "2025-2026"
+        url: https://www.duq.edu/documents/institutionalresearch/cds-2025-2026.pdf
+        format: pdf
+  - unitid: 215929
+    name: "University of Scranton"
+    cds:
+      - year: "2025-2026"
+        url: https://www.scranton.edu/pir/institutional-research/institutional-research-reports/2025-2026-cds.pdf
+        format: pdf
+  - unitid: 231174
+    name: "University of Vermont"
+    cds:
+      - year: "2023-2024"
+        url: https://uvmd10.drup3.uvm.edu/d10-files/documents/2024-07/2023-2024_Common_Data_Set.pdf
+        format: pdf
+  - unitid: 232308
+    name: "Hollins University"
+    cds:
+      - year: "2025-2026"
+        url: https://www.hollins.edu/wp-content/uploads/2026/07/CDS-2025-2026-Hollins-University.pdf
+        format: pdf
+  - unitid: 196015
+    name: "SUNY College of Technology at Canton"
+    cds:
+      - year: "2025-2026"
+        url: https://www.canton.edu/media/ir/CDS2025-2026.pdf
+        format: pdf
+  - unitid: 194578
+    name: "Pratt Institute-Main"
+    cds:
+      - year: "2025-2026"
+        url: https://www.pratt.edu/wp-content/uploads/2026/02/2025-2026-CDS.xlsx
+        format: xlsx
+  - unitid: 209542
+    name: "Oregon State University"
+    cds:
+      - year: "2025-2026"
+        url: https://institutionalresearch.oregonstate.edu/sites/institutionalresearch.oregonstate.edu/files/2026-06/CDS-2025-26_1.pdf
+        format: pdf
+  - unitid: 228802
+    name: "The University of Texas at Tyler"
+    cds:
+      - year: "2025-2026"
+        url: https://www.uttyler.edu/offices/information-analysis/files/cds-2025-26-20260418.pdf
+        format: pdf
+  - unitid: 196103
+    name: "SUNY College of Environmental Science and Forestry"
+    cds:
+      - year: "2025-2026"
+        url: https://www.esf.edu/institutional-research/documents/CDS_2025_2026_ESF.pdf
+        format: pdf
+  - unitid: 216278
+    name: "Susquehanna University"
+    cds:
+      - year: "2025-2026"
+        url: https://www.susqu.edu/wp-content/uploads/2025/05/Common-Data-Set.pdf
+        format: pdf
+  - unitid: 191533
+    name: "Hartwick College"
+    cds:
+      - year: "2025-2026"
+        url: https://www.hartwick.edu/wp-content/uploads/2026/07/IR_HartwickCollegeCommonDataSet2025-2026_070826.pdf
+        format: pdf
+  - unitid: 219082
+    name: "Dakota State University"
+    cds:
+      - year: "2025-2026"
+        url: https://blogs.dsu.edu/wp-content/uploads/sites/19/2026/04/CDS_2025-2026-Dakota-State-University_for-Publication.pdf
+        format: pdf
+  - unitid: 201195
+    name: "Baldwin Wallace University"
+    cds:
+      - year: "2025-2026"
+        url: https://www.bw.edu/about/offices/institutional-research-assessment/_files/common-data-set-2025-26.pdf
+        format: pdf
+  - unitid: 200800
+    name: "University of Akron Main Campus"
+    cds:
+      - year: "2025-2026"
+        url: https://www.uakron.edu/ir/docs/CDS/CDS%202025-2026%20University%20of%20Akron%20Main%20Campus.pdf
+        format: pdf
+  - unitid: 215293
+    name: "University of Pittsburgh-Pittsburgh Campus"
+    cds:
+      - year: "2025-2026"
+        url: https://www.ir.pitt.edu/sites/default/files/2026-09/2025-2026%20Pittsburgh%20Common%20Data%20Set.pdf
+        format: pdf
+  - unitid: 187985
+    name: "University of New Mexico-Main Campus"
+    cds:
+      - year: "2024-2025"
+        url: https://oia.unm.edu/resources/cds_24-25_pdf.pdf
+        format: pdf
+  - unitid: 240277
+    name: "University of Wisconsin-Green Bay"
+    cds:
+      - year: "2025-2026"
+        url: https://www.uwgb.edu/getmedia/e4d65779-195e-47a8-95a8-b4e72bc34978/CDS-2025-2026.xlsx
+        format: xlsx
+  - unitid: 219602
+    name: "Austin Peay State University"
+    cds:
+      - year: "2025-2026"
+        url: https://www.apsu.edu/institutional-research/files/common-data-set-2025-2026.pdf
+        format: pdf
+  - unitid: 206084
+    name: "University of Toledo"
+    cds:
+      - year: "2023-2024"
+        url: https://www.utoledo.edu/offices/institutional-research/report-library/common-data-set/docs/cds-2023-2024.pdf
+        format: pdf
+  - unitid: 230728
+    name: "Utah State University"
+    cds:
+      - year: "2025-2026"
+        url: https://www.usu.edu/oda/files/common-data-sets/CDS2025-26.pdf
+        format: pdf
+  - unitid: 225511
+    name: "University of Houston"
+    cds:
+      - year: "2025-2026"
+        url: https://www.uh.edu/ir/reports/common-data-sets/cds-data/common_data_set_2025-2026_final.xlsx
+        format: xlsx
+  - unitid: 216764
+    name: "West Chester University of Pennsylvania"
+    cds:
+      - year: "2025-2026"
+        url: https://www.wcupa.edu/deputy-provost/institutionalResearch/documents/CDS_2025-2026%20Final.pdf
+        format: pdf
+  - unitid: 218964
+    name: "Winthrop University"
+    cds:
+      - year: "2023-2024"
+        url: https://www.winthrop.edu/uploadedFiles/institutional-effectiveness/cds2023-24.pdf
+        format: pdf
+  - unitid: 212054
+    name: "Drexel University"
+    cds:
+      - year: "2025-2026"
+        url: https://drexel.edu/institutionalresearch/~/media/Drexel/Provost-Group/InstitutionalResearch/Documents/Factbook/CDS_2025-2026.pdf
+        format: pdf
+  - unitid: 177968
+    name: "Lindenwood University"
+    cds:
+      - year: "2025-2026"
+        url: https://www.lindenwood.edu/wp-content/uploads/2026/04/cds_2025-2026.xlsx
+        format: xlsx
+  - unitid: 232982
+    name: "Old Dominion University"
+    cds:
+      - year: "2025-2026"
+        url: https://www.odu.edu/sites/default/files/2026/documents/cds-2025-2026.pdf
+        format: pdf
+  - unitid: 160038
+    name: "Northwestern State University of Louisiana"
+    cds:
+      - year: "2025-2026"
+        url: https://dps.apps.nsula.edu/view/17818/CDS-PDF-2025-2026_PDF_Template.pdf
+        format: pdf
+  - unitid: 224554
+    name: "East Texas A&M University"
+    cds:
+      - year: "2025-2026"
+        url: https://www.etamu.edu/wp-content/uploads/2026/07/CDS_2025-2026-2.pdf
+        format: pdf
+  - unitid: 210739
+    name: "DeSales University"
+    cds:
+      - year: "2025-2026"
+        url: https://www.desales.edu/_files/pdfs/ier/Common-Data-Set-2025-2026.pdf
+        format: pdf
+  - unitid: 195526
+    name: "Skidmore College"
+    cds:
+      - year: "2025-2026"
+        url: https://www.skidmore.edu/ir/facts/common/cds-2025-26.pdf
+        format: pdf
+  - unitid: 228246
+    name: "Southern Methodist University"
+    cds:
+      - year: "2025-2026"
+        url: https://www.smu.edu/-/media/site/ir/commondatasets/2025/cds-2025-26-part-c-first-time-freshman-final.pdf
+        format: pdf
+  - unitid: 224323
+    name: "University of Dallas"
+    cds:
+      - year: "2025-2026"
+        url: https://udallas.edu/offices-services/institutional-effectiveness/_documents/CDS_2025-26.pdf
+        format: pdf
+  - unitid: 213385
+    name: "Lafayette College"
+    cds:
+      - year: "2025-2026"
+        url: https://oir.lafayette.edu/wp-content/uploads/sites/196/2026/01/CDS2025-2026.pdf
+        format: pdf
+  - unitid: 239105
+    name: "Marquette University"
+    cds:
+      - year: "2024-2025"
+        url: https://www.marquette.edu/academic-effectiveness/institutional-research-analysis/documents/cds-2024-2025_final.pdf
+        format: pdf
+  - unitid: 213996
+    name: "Messiah University"
+    cds:
+      - year: "2025-2026"
+        url: https://www.messiah.edu/institutional-research/_files/messiah-university-cds-current-year.pdf
+        format: pdf
+  - unitid: 240268
+    name: "University of Wisconsin-Eau Claire"
+    cds:
+      - year: "2025-2026"
+        url: https://www.uwec.edu/sites/default/files/2025-11/CDS2025-2026.pdf
+        format: pdf
+  - unitid: 235097
+    name: "Eastern Washington University"
+    cds:
+      - year: "2025-2026"
+        url: https://inside.ewu.edu/institutional-research/wp-content/uploads/sites/65/2026/05/CDS-EWU-2025-2026-FINAL.pdf
+        format: pdf
+  - unitid: 211556
+    name: "Chatham University"
+    cds:
+      - year: "2024-2025"
+        url: https://www.chatham.edu/_documents/_about/cds-2024-2025.pdf
+        format: pdf
+  - unitid: 151306
+    name: "University of Southern Indiana"
+    cds:
+      - year: "2025-2026"
+        url: https://www.usi.edu/media/qagpobie/cds-25-26-all-combined_klc_20260818.pdf
+        format: pdf
+  - unitid: 230959
+    name: "Middlebury College"
+    cds:
+      - year: "2024-2025"
+        url: https://www.middlebury.edu/sites/default/files/2026-04/Fall%202025%20CDS%20FINAL.pdf?fv=WuqVl12_
+        format: pdf
+  - unitid: 209065
+    name: "Linfield University"
+    cds:
+      - year: "2025-2026"
+        url: https://www.linfield.edu/assets/files/institutional-research/2025-2026-Common-Data-Set-6-2-2026.pdf
+        format: pdf
+  - unitid: 234030
+    name: "Virginia Commonwealth University"
+    cds:
+      - year: "2024-2025"
+        url: https://irds.vcu.edu/media/decision-support/pdf/commondatasets/CommonDataSet2024-25.pdf
+        format: pdf
+  - unitid: 196042
+    name: "Farmingdale State College"
+    cds:
+      - year: "2024-2025"
+        url: https://www.farmingdale.edu/institutional-research/pdf/cds_2024-2025_fsc.pdf
+        format: pdf
+  - unitid: 186867
+    name: "Stevens Institute of Technology"
+    cds:
+      - year: "2023-2024"
+        url: https://assets.stevens.edu/mviowpldu823/SYVRZ7OfZYOUm5hNrz7Qz/720500f10bed5fcd5fb905c3aa2143d1/CDS_2023-2024__Stevens_Institute_of_Technology.pdf
+        format: pdf
+  - unitid: 213668
+    name: "Lycoming College"
+    cds:
+      - year: "2024-2025"
+        url: https://www.lycoming.edu/institutional-research/pdfs/cds-2024-2025.pdf
+        format: pdf
+  - unitid: 232186
+    name: "George Mason University"
+    cds:
+      - year: "2024-2025"
+        url: https://oiep.gmu.edu/wp-content/uploads/2026/01/2024-2025-CDS-Final_Updated-after-Summer.pdf
+        format: pdf
+  - unitid: 210429
+    name: "Western Oregon University"
+    cds:
+      - year: "2024-2025"
+        url: https://cdn.wou.edu/institutionalresearch/files/2025/09/CDS-2024-2025.pdf
+        format: pdf
+  - unitid: 213020
+    name: "Indiana University of Pennsylvania"
+    cds:
+      - year: "2025-2026"
+        url: https://www.iup.edu/planningandassessment/files/university_data/common_data_set/cds-2025-26-iup-for-web-2.pdf
+        format: pdf
+  - unitid: 212832
+    name: "Gwynedd Mercy University"
+    cds:
+      - year: "2024-2025"
+        url: https://www.gmercyu.edu/pdfs/legacy-cds_2024-2025_updated_4_11_2025_compressed.pdf
+        format: pdf
+  - unitid: 229179
+    name: "Texas Woman's University"
+    cds:
+      - year: "2025-2026"
+        url: https://twu.edu/media/documents/irdm/CDS_2025-2026-(1).pdf
+        format: pdf
+  - unitid: 215442
+    name: "Point Park University"
+    cds:
+      - year: "2025-2026"
+        url: https://www.pointpark.edu/about/admindepts/institutionalresearch/2025-2026-cds-final-4-15.pdf
+        format: pdf
+  - unitid: 186201
+    name: "Ramapo College of New Jersey"
+    cds:
+      - year: "2024-2025"
+        url: https://www.ramapo.edu/ir/wp-content/uploads/sites/52/2025/04/2024-2025-Common-Data-Set.pdf
+        format: pdf
+  - unitid: 459949
+    name: "Texas A&M University-San Antonio"
+    cds:
+      - year: "2024-2025"
+        url: https://www.tamusa.edu/office-institutional-research/documents/CDS_TAMUSA_2024_2025_legacy_version_update.xlsx
+        format: xlsx
+  - unitid: 187897
+    name: "New Mexico Highlands University"
+    cds:
+      - year: "2023-2024"
+        url: https://its.nmhu.edu/IntranetUploads/008528-CommonData-1015202492829.pdf
+        format: pdf
+  - unitid: 219976
+    name: "Lipscomb University"
+    cds:
+      - year: "2024-2025"
+        url: https://lipscomb.edu/sites/default/files/2025-10/CDS%202024%202025%20Lipscomb%20University%20Complete.pdf
+        format: pdf
+  - unitid: 239017
+    name: "Lawrence University"
+    cds:
+      - year: "2024-2025"
+        url: https://inside.lawrence.edu/sites/default/files/2025-02/CDS%202024-25_0.pdf
+        format: pdf
+  - unitid: 100830
+    name: "Auburn University at Montgomery"
+    cds:
+      - year: "2024-2025"
+        url: https://www.aum.edu/wp-content/uploads/2025/05/CDS-2024-2025.pdf
+        format: pdf
+  - unitid: 185828
+    name: "New Jersey Institute of Technology"
+    cds:
+      - year: "2024-2025"
+        url: https://www.njit.edu/oie/sites/njit.edu.oie/files/CDS_2024-2025_v12.xlsx
+        format: xlsx
+  - unitid: 183080
+    name: "Plymouth State University"
+    cds:
+      - year: "2024-2025"
+        url: https://www.plymouth.edu/sites/default/files/media/2025-07/FINAL%20CDS-2024-2025-Plymouth.pdf
+        format: pdf
+  - unitid: 229814
+    name: "West Texas A & M University"
+    cds:
+      - year: "2024-2025"
+        url: https://www.wtamu.edu/_files/docs/academics/Institutional%20Research/CDS.pdf
+        format: pdf
+  - unitid: 225627
+    name: "University of the Incarnate Word"
+    cds:
+      - year: "2024-2025"
+        url: https://my.uiw.edu/ir/_docs/cds-24-25.pdf
+        format: pdf
+  - unitid: 145813
+    name: "Illinois State University"
+    cds:
+      - year: "2024-2025"
+        url: https://prpa.illinoisstate.edu/downloads/CDS-2024-2025_ISU_FINAL.pdf
+        format: pdf
+  - unitid: 207263
+    name: "Northeastern State University"
+    cds:
+      - year: "2024-2025"
+        url: https://offices.nsuok.edu/_resources/documents/Legacy-CDS_2024-2025.xlsx
+        format: xlsx
+  - unitid: 240374
+    name: "University of Wisconsin-Parkside"
+    cds:
+      - year: "2024-2025"
+        url: https://www.uwp.edu/wp-content/uploads/2026/07/CDS_2024-25-UW-Parkside.pdf
+        format: pdf
+  - unitid: 233541
+    name: "Shenandoah University"
+    cds:
+      - year: "2024-2025"
+        url: https://www.su.edu/wp-content/uploads/2014/11/CDS-2425-Final.pdf
+        format: pdf
+  - unitid: 203535
+    name: "Kenyon College"
+    cds:
+      - year: "2024-2025"
+        url: https://www.kenyon.edu/files/resources/kenyon-cds-202425-march-2025.pdf
+        format: pdf
+  - unitid: 237330
+    name: "Concord University"
+    cds:
+      - year: "2024-2025"
+        url: https://www.concord.edu/wp-content/uploads/CDS_2024-2025_ConcordUniversity.pdf
+        format: pdf
+  - unitid: 133669
+    name: "Florida Atlantic University"
+    cds:
+      - year: "2024-2025"
+        url: https://www.fau.edu/iea/documents/pdf/cds/cds-2024-2025.pdf
+        format: pdf
+  - unitid: 195030
+    name: "University of Rochester"
+    cds:
+      - year: "2024-2025"
+        url: https://www.rochester.edu/provost/wp-content/uploads/2025/06/CDS_2024-2025-completed-for-web.pdf
+        format: pdf
+  - unitid: 235167
+    name: "The Evergreen State College"
+    cds:
+      - year: "2025-2026"
+        url: https://www.evergreen.edu/sites/default/files/2026-04/2025-2026_Common_Data_Set_Evergreen.pdf
+        format: pdf
+  - unitid: 230816
+    name: "Bennington College"
+    cds:
+      - year: "2024-2025"
+        url: https://www.bennington.edu/sites/default/files/sources/docs/cds_bennington_2024-2025_final.pdf
+        format: pdf
+  - unitid: 219471
+    name: "University of South Dakota"
+    cds:
+      - year: "2024-2025"
+        url: https://www.usd.edu/-/media/Project/USD/DotEdu/About/Departments-Offices-and-Resources/Institutional-Research-Planning-and-Assessment/USD-Common-Data-Set.pdf?rev=1ddcb14196e140a9bec776ebd5bc7b88&hash=F12AD65AC125F221B48CB947AD4702C0
+        format: pdf
+  - unitid: 191630
+    name: "Hobart William Smith Colleges"
+    cds:
+      - year: "2024-2025"
+        url: https://www.hws.edu/offices/irp/pdf/cds-2425.pdf
+        format: pdf
+  - unitid: 190099
+    name: "Colgate University"
+    cds:
+      - year: "2023-2024"
+        url: https://www.colgate.edu/sites/default/files/2024-07/CDS_2023-2024%20FINAL.pdf
+        format: pdf
+  - unitid: 190600
+    name: "CUNY John Jay College of Criminal Justice"
+    cds:
+      - year: "2023-2024"
+        url: https://www.jjay.cuny.edu/sites/default/files/2024-02/CDS2023_2024.WORK-FILE.pdf
+        format: pdf
+  - unitid: 189705
+    name: "Canisius University"
+    cds:
+      - year: "2023-2024"
+        url: https://www.canisius.edu/sites/default/files/documents/CDS_2023-2024.pdf
+        format: pdf
+  - unitid: 206622
+    name: "Xavier University"
+    cds:
+      - year: "2023-2024"
+        url: https://www.xavier.edu/institutional-research/reports-and-documents/cds_2023-2024-1-legacy-final-12-sep-2024.pdf
+        format: pdf
+  - unitid: 236896
+    name: "Walla Walla University"
+    cds:
+      - year: "2023-2024"
+        url: https://www.wallawalla.edu/fileadmin/user_upload/Institutional_Research/Common_Data_Set/CDS_2023-2024-1_-_final_01.pdf
+        format: pdf
+  - unitid: 209807
+    name: "Portland State University"
+    cds:
+      - year: "2023-2024"
+        url: https://www.pdx.edu/research-planning/sites/researchplanning.web.wdt.pdx.edu/files/2024-05/CDS_2023-2024%20(Updated%205-8-24%20AM).pdf
+        format: pdf
+  - unitid: 159391
+    name: "Louisiana State University and Agricultural & Mechanical College"
+    cds:
+      - year: "2023-2024"
+        url: https://www.lsu.edu/data/common-data-set/2023/3_2324_admissions.pdf
+        format: pdf
+  - unitid: 220862
+    name: "University of Memphis"
+    cds:
+      - year: "2023-2024"
+        url: https://www.memphis.edu/oir/oirweb/WebReports/ProfilesAndFactbooks/CDS2023_2024.pdf
+        format: pdf
+  - unitid: 231651
+    name: "Regent University"
+    cds:
+      - year: "2023-2024"
+        url: https://www.regent.edu/wp-content/uploads/2024/06/Regent-University-Common-Data-Set-2023-2024.pdf
+        format: pdf
+  - unitid: 159647
+    name: "Louisiana Tech University"
+    cds:
+      - year: "2025-2026"
+        url: https://oierp.latech.edu/documents/2026/06/common-data-set-2025-2026.xlsx/
+        format: xlsx
+  - unitid: 198385
+    name: "Davidson College"
+    cds:
+      - year: "2025-2026"
+        url: https://www.davidson.edu/media/9718/download?attachment
+        format: pdf
+  - unitid: 230038
+    name: "Brigham Young University"
+    cds:
+      - year: "2025-2026"
+        url: https://data.byu.edu/0000019d-e4b4-df27-a1df-eef579b00001/cds-2025-2026-pdf
+        format: pdf
+  - unitid: 110662
+    name: "University of California-Los Angeles"
+    cds:
+      - year: "2025-2026"
+        url: https://apb.ucla.edu/file/d1ab04b3-ee89-4cf2-9124-8dc0471b5e5a
+        format: pdf
+  - unitid: 166629
+    name: "University of Massachusetts-Amherst"
+    cds:
+      - year: "2025-2026"
+        url: https://www.umass.edu/uair/media/1062/download
+        format: pdf
+  - unitid: 238333
+    name: "Beloit College"
+    cds:
+      - year: "2025-2026"
+        url: https://www.beloit.edu/live/files/1104-common-data-set-cds-2025-26
+        format: pdf
+  - unitid: 217420
+    name: "Rhode Island College"
+    cds:
+      - year: "2025-2026"
+        url: https://www.ric.edu/documents/common-data-set-2025-2026
+        format: pdf
+  - unitid: 121257
+    name: "Pitzer College"
+    cds:
+      - year: "2025-2026"
+        url: https://www.pitzer.edu/documents/common-data-set-2025-2026
+        format: pdf
+  - unitid: 209056
+    name: "Lewis & Clark College"
+    cds:
+      - year: "2025-2026"
+        url: https://www.lclark.edu/live/files/37831-lc-cds2025-26pdf
+        format: pdf
+  - unitid: 183062
+    name: "Keene State College"
+    cds:
+      - year: "2025-2026"
+        url: https://keene.edu/office/ir/assets/document/cds/download/
+        format: pdf
+  - unitid: 168263
+    name: "Westfield State University"
+    cds:
+      - year: "2023-2024"
+        url: https://www.westfield.ma.edu/documents/cds2023-24pdf
+        format: pdf

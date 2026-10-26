@@ -183,3 +183,51 @@ def test_shared_documents_are_not_assigned_automatically():
     )
     assert [o.entry is not None for o in outs] == [False, False, True]
     assert "choose by hand" in outs[0].reason
+
+
+@respx.mock
+async def test_download_links_without_a_file_extension_are_documents():
+    respx.get("https://www.alabama.example.edu/robots.txt").respond(404)
+    respx.get("https://www.alabama.example.edu/media/1062/download").respond(
+        200, headers={"content-type": "application/pdf"}, content=(CDS / "alabama_2025-26.pdf").read_bytes()
+    )
+    item = {
+        "unitid": 100751,
+        "name": "Alabama",
+        "domain": "alabama.example.edu",
+        "urls": ["https://www.alabama.example.edu/media/1062/download"],
+    }
+    async with HttpClient(wait=no_wait) as http:
+        out = await check_school(http, Robots(http), item)
+    assert out.entry is not None
+    assert out.entry["cds"][0] == {
+        "year": "2025-2026",  # read from the document itself
+        "url": "https://www.alabama.example.edu/media/1062/download",
+        "format": "pdf",
+    }
+
+
+@respx.mock
+async def test_another_campus_document_is_rejected():
+    import re
+
+    respx.get(url__regex=re.compile(r"educationdata\.urban\.org/.*/admissions-enrollment/")).respond(
+        200,
+        json={
+            "count": 1,
+            "next": None,
+            "results": [{"sex": 99, "number_applied": 2000, "number_admitted": 1500}],
+        },
+    )
+    respx.get("https://www.alabama.example.edu/files/CDS_2025-2026.pdf").respond(
+        200, headers={"content-type": "application/pdf"}, content=(CDS / "alabama_2025-26.pdf").read_bytes()
+    )
+    item = {
+        "unitid": 999,
+        "name": "Alabama Small Branch Campus",
+        "domain": "alabama.example.edu",
+        "urls": ["https://www.alabama.example.edu/files/CDS_2025-2026.pdf"],
+    }
+    async with HttpClient(wait=no_wait) as http:
+        out = await check_school(http, Robots(http), item)
+    assert out.entry is None and "another campus" in out.reason

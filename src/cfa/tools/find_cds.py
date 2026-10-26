@@ -30,12 +30,13 @@ from urllib.parse import urljoin, urlsplit, urlunsplit
 from urllib.robotparser import RobotFileParser
 
 from cfa import config
+from cfa.aggregate import CROSSCHECK_RATIO
 from cfa.sources.cds.adapter import parse_document
 from cfa.sources.cds.fetch import fetch_cds
 from cfa.sources.cds.parse_pdf import PDFIUM_LOCK
 from cfa.sources.http import HttpClient
 from cfa.sources.registry import load_bundled
-from cfa.sources.urban_ipeds import is_candidate_college
+from cfa.sources.urban_ipeds import UrbanIpedsAdapter, is_candidate_college
 from cfa.states import STATE_FIPS, parse_states
 from cfa.tools.validate_registry import passes
 
@@ -199,6 +200,32 @@ def document_year(content: bytes, fmt: str) -> str | None:
     return infer_year(m.group(1)) if m else None
 
 
+# A document whose applicant count is this far from IPEDS's count for the college belongs to
+# someone else (a system's main campus, a sister campus); same ratio the app uses at runtime.
+OTHER_CAMPUS_RATIO = CROSSCHECK_RATIO
+
+
+def applicants_in(sections: dict[str, Any]) -> float | None:
+    c1 = sections.get("C1")
+    fv = c1.fields.get("applicants_total") if c1 is not None else None
+    return float(fv.value) if fv is not None and fv.ok and fv.value else None
+
+
+async def other_campus(http: HttpClient, unitid: int, sections: dict[str, Any]) -> str:
+    """Non-empty reason if the document's C1 applicants clearly don't match IPEDS for this college."""
+    cds = applicants_in(sections)
+    if cds is None:
+        return ""
+    _status, data, _note, _year = await UrbanIpedsAdapter(http).fetch_topic("admissions-enrollment", unitid)
+    fv = data.get("applicants_total")
+    if fv is None or not fv.ok or not fv.value:
+        return ""  # IPEDS has no count to compare with
+    ratio = cds / float(fv.value)
+    if 1 / OTHER_CAMPUS_RATIO <= ratio <= OTHER_CAMPUS_RATIO:
+        return ""
+    return f"document reports {int(cds):,} applicants but IPEDS has {int(fv.value):,} (another campus's CDS?)"
+
+
 async def check_school(http: HttpClient, robots: Robots, item: dict[str, Any]) -> Outcome:
     unitid, name = int(item["unitid"]), str(item["name"])
     domain = site_root(str(item["domain"]))
@@ -223,6 +250,11 @@ async def check_school(http: HttpClient, robots: Robots, item: dict[str, Any]) -
             blocked += 1  # the site refuses automated requests; respected, never worked around
             continue
         ctype = res.response.headers.get("content-type", "") if res.response is not None else ""
+        body = res.response.content[:8] if res.ok and res.response is not None else b""
+        if body.startswith((b"%PDF", b"PK")):
+            # A download link without a file extension ("/media/1062/download", "cds-2025-2026-pdf")
+            cands.append(Candidate(url, "", infer_year(url)))
+            continue
         if res.ok and res.response is not None and "html" in ctype:
             final = str(res.response.url)
             cands += doc_links(final, res.response.text, domain)
@@ -269,6 +301,10 @@ async def check_school(http: HttpClient, robots: Robots, item: dict[str, Any]) -
             continue
         ok, why = passes(sections)
         if ok:
+            mismatch = await other_campus(http, unitid, sections)
+            if mismatch:
+                out.reason = mismatch
+                continue
             out.entry = {"unitid": unitid, "name": name, "cds": [{"year": year, "url": c.url, "format": fmt}]}
             out.reason = ""
             return out
