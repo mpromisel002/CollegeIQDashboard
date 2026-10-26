@@ -159,3 +159,88 @@ schools:
       - year: "2025-2026"
         url: https://www.utc.edu/sites/default/files/2026-06/cds-2025-2026.pdf
         format: pdf
+  # --- Found with cfa.tools.find_cds (2026-10): admissions + GPA verified ---------
+  - unitid: 104151
+    name: "Arizona State University Campus Immersion"
+    cds:
+      - year: "2025-2026"
+        url: https://uoia.asu.edu/sites/g/files/litvpz1436/files/2026-06/CDS%202025-26%20-%20ASU%20Campus%20Immersion.pdf
+        format: pdf
+  - unitid: 105330
+    name: "Northern Arizona University"
+    cds:
+      - year: "2025-2026"
+        url: https://in.nau.edu/wp-content/uploads/sites/129/2026/04/CDS-2025-2026.pdf
+        format: pdf
+  - unitid: 120883
+    name: "University of the Pacific"
+    cds:
+      - year: "2025-2026"
+        url: https://www.pacific.edu/sites/default/files/users/user777/2025_26_CDS_Full_Form_.pdf
+        format: pdf
+  - unitid: 130493
+    name: "Southern Connecticut State University"
+    cds:
+      - year: "2025-2026"
+        url: https://go.southernct.edu/docs/drupal/CDS_2025-2026.xlsx
+        format: xlsx
+  - unitid: 433660
+    name: "Florida Gulf Coast University"
+    cds:
+      - year: "2024-2025"
+        url: https://www.fgcu.edu/planning/institutionalresearch/files/cds-2024-2025-ada.pdf
+        format: pdf
+  - unitid: 133951
+    name: "Florida International University"
+    cds:
+      - year: "2025-2026"
+        url: https://aim.fiu.edu/cds/CDS2025.pdf
+        format: pdf
+  - unitid: 139658
+    name: "Emory University"
+    cds:
+      - year: "2025-2026"
+        url: https://provost.emory.edu/planning-administration/_includes/documents/sections/institutional-data/emory-common-date-set-2025-2026.pdf
+        format: pdf
+  - unitid: 447689
+    name: "Georgia Gwinnett College"
+    cds:
+      - year: "2023-2024"
+        url: https://www.ggc.edu/sites/default/files/2024-12/CDS_2023-2024_GGC_Data_final.pdf
+        format: pdf
+  - unitid: 139755
+    name: "Georgia Institute of Technology-Main Campus"
+    cds:
+      - year: "2025-2026"
+        url: https://irp.gatech.edu/sites/default/files/CDS/CDS_2025-2026_FINAL_R4_03JUN2026.pdf
+        format: pdf
+  - unitid: 154235
+    name: "Saint Ambrose University"
+    cds:
+      - year: "2025-2026"
+        url: https://sau.edu/media/content-assets/pdfs/consumer-information/SAU-Common-Data-Set-2025-26.pdf
+        format: pdf
+  - unitid: 211088
+    name: "Arcadia University"
+    cds:
+      - year: "2023-2024"
+        url: https://www.arcadia.edu/wp-content/uploads/2024/04/CDS_2023-2024.pdf
+        format: pdf
+  - unitid: 102614
+    name: "University of Alaska Fairbanks"
+    cds:
+      - year: "2025-2026"
+        url: https://www.uaf.edu/pair/pair_reports/common-data-set/UAF_Common_data_Set_2025_2026.pdf
+        format: pdf
+  - unitid: 102049
+    name: "Samford University"
+    cds:
+      - year: "2024-2025"
+        url: https://www.samford.edu/departments/files/Institutional_Effectiveness/2024-2025/CDS_Section_C.pdf
+        format: pdf
+  - unitid: 102368
+    name: "Troy University"
+    cds:
+      - year: "2025-2026"
+        url: https://www.troy.edu/_assets/irpe/_documents/cds-2025-2026.pdf
+        format: pdf

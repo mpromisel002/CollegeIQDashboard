@@ -42,7 +42,7 @@ bundled into the exe and shows a banner.
    ```
 
 4. **Validate:** `python -m cfa.tools.validate_registry`. A school must show `PASS`
-   (C1 parses, C11 or C12 parses, F1 gives at least one value). If it fails, do not commit it — add it
+   (C1 parses and C11 or C12 parses; F1 is optional). If it fails, do not commit it — add it
    to `docs/registry_failures.md` with the reason.
 5. Open a PR. CI checks the YAML schema; the weekly live smoke run re-validates every link.
 

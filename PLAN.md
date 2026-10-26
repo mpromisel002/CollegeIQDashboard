@@ -357,3 +357,9 @@ A per-school free-text and tags field (e.g., "political lean: left-leaning per c
   changes needed for schools without a CDS: Safety may rest on tests + admit rate when the school
   publishes no GPA distribution, and SAT/ACT ranges are ignored when under 5 % of enrollees submitted
   that test. Cards are paged (20 per page).
+- v1.5 (2026-10-26): **registry bar is C1 + C11/C12** (admissions and GPA). F1 (Greek life,
+  housing) is optional: schools that publish GPA but leave F1 blank now qualify and show "Not
+  reported" for Greek life. Registry entries are found with `python -m cfa.tools.find_cds`, which
+  looks only on each college's own website (robots.txt respected) and keeps a document only if it
+  passes the same check as `validate_registry`. CDS PDFs are pre-scanned with pdfium so only parts
+  B–F are laid out (about twice as fast, identical results on all registry documents).

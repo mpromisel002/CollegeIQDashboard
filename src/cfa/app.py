@@ -26,6 +26,17 @@ def self_test() -> int:
     except Exception as exc:
         log.error("self-test: bundled registry unusable: %s", exc)
         return 1
+    try:  # the document readers must be present in the frozen build
+        import openpyxl  # noqa: F401
+        import pdfplumber  # noqa: F401
+        import pypdfium2
+
+        pypdfium2.PdfDocument.new().close()  # loads the native pdfium library
+    except Exception as exc:
+        log.error("self-test: document readers unavailable: %s", exc)
+        print(f"document readers: FAILED {type(exc).__name__}: {exc}")
+        return 1
+    print("document readers: OK")
 
     async def go() -> int:
         async with HttpClient(max_retries=1) as http:

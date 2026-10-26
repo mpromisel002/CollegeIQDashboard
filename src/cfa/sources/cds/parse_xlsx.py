@@ -13,6 +13,8 @@ COL_WIDTH = 10.0  # synthetic x units per column so the same proximity logic wor
 # The official template's machine-readable "answer sheet" columns start with codes like C.101 / C.8G04.
 ANSWER_CODE = re.compile(r"^[A-J]\.\s?\d")
 MAX_ROWS_PER_SHEET = 3000
+# Sheets plainly titled as a part the extractors never read ("CDS-H", "H. Financial Aid", "Section J").
+_UNUSED_PART = re.compile(r"^(?:cds[\s_-]*|section[\s_-]*)?([adghij])(?:[\s._:-]|$)", re.IGNORECASE)
 
 
 class XlsxError(Exception):
@@ -44,7 +46,10 @@ def parse_xlsx(content: bytes) -> Document:
     rows: list[Row] = []
     try:
         for sheet_no, ws in enumerate(wb.worksheets):
-            if ws.title.strip().lower().startswith(("answer", "definition", "cds definition", "glossary")):
+            title = ws.title.strip()
+            if title.lower().startswith(("answer", "definition", "cds definition", "glossary")):
+                continue
+            if _UNUSED_PART.match(title):
                 continue
             for r_idx, row in enumerate(ws.iter_rows()):
                 if r_idx >= MAX_ROWS_PER_SHEET:

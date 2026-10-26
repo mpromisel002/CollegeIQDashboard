@@ -3,7 +3,7 @@
 # Ships code + the bundled registry (pointers only). Test fixtures are never included.
 import os
 
-from PyInstaller.utils.hooks import collect_data_files, collect_submodules
+from PyInstaller.utils.hooks import collect_all, collect_data_files, collect_submodules
 
 ROOT = os.path.abspath(os.path.join(SPECPATH, ".."))  # noqa: F821 (SPECPATH is injected by PyInstaller)
 
@@ -17,10 +17,19 @@ datas += collect_data_files("certifi")  # CA bundle so HTTPS works on clean Wind
 
 hiddenimports = collect_submodules("keyring.backends") + ["win32ctypes.core"]
 
+# pdfium (used to pre-scan CDS PDFs) ships a native DLL and version.json files.
+binaries = []
+for pkg in ("pypdfium2", "pypdfium2_raw"):
+    pkg_datas, pkg_binaries, pkg_hidden = collect_all(pkg)
+    datas += pkg_datas
+    binaries += pkg_binaries
+    hiddenimports += pkg_hidden
+
 a = Analysis(
     [os.path.join(ROOT, "packaging", "launcher.py")],
     pathex=[os.path.join(ROOT, "src")],
     datas=datas,
+    binaries=binaries,
     hiddenimports=hiddenimports,
     excludes=[
         "tests", "pytest", "respx", "_pytest", "pytestqt", "mypy", "ruff",
