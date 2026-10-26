@@ -31,7 +31,10 @@ def self_test() -> int:
         import pdfplumber  # noqa: F401
         import pypdfium2
 
-        pypdfium2.PdfDocument.new().close()  # loads the native pdfium library
+        from cfa.sources.cds.parse_pdf import PDFIUM_LOCK
+
+        with PDFIUM_LOCK:
+            pypdfium2.PdfDocument.new().close()  # loads the native pdfium library
     except Exception as exc:
         log.error("self-test: document readers unavailable: %s", exc)
         print(f"document readers: FAILED {type(exc).__name__}: {exc}")

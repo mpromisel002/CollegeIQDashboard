@@ -5,6 +5,7 @@ from __future__ import annotations
 import io
 import logging
 import re
+import threading
 from typing import Any
 
 from cfa.sources.cds.layout import EMPTY_BOX_CHARS, MARK_CHARS, Document, Row, Token
@@ -130,6 +131,10 @@ def _row(words: list[dict[str, Any]], page_no: int) -> Row:
     return Row([Token(str(w["text"]), float(w["x0"]), float(w["x1"])) for w in words], top, page_no)
 
 
+# pdfium is not thread-safe (concurrent use crashes the process), and documents may be parsed on
+# several threads when no process pool is available. Every pdfium call goes through this lock.
+PDFIUM_LOCK = threading.Lock()
+
 # A page's section is the letter of most numbered headings on it ("C1 Applications", "F1. Percent…").
 _HEADING = re.compile(r"(?m)^\s*([A-J])\d{1,2}\s*[.:)]?\s+[A-Z]")
 # The extractors read sections in parts B, C, E and F only (see sections.EXTRACTORS).
@@ -146,17 +151,20 @@ def needed_pages(content: bytes, n_pages: int) -> range:
     try:
         import pypdfium2 as pdfium
 
-        pdf = pdfium.PdfDocument(content)
-        try:
-            letters = []
-            for i in range(min(len(pdf), n_pages)):
-                page = pdf[i]
-                text = page.get_textpage().get_text_range()
-                page.close()
-                found = [m.group(1) for m in _HEADING.finditer(text)]
-                letters.append(max(set(found), key=found.count) if found else "")
-        finally:
-            pdf.close()
+        letters = []
+        with PDFIUM_LOCK:
+            pdf = pdfium.PdfDocument(content)
+            try:
+                for i in range(min(len(pdf), n_pages)):
+                    page = pdf[i]
+                    textpage = page.get_textpage()
+                    text = textpage.get_text_range()
+                    textpage.close()
+                    page.close()
+                    found = [m.group(1) for m in _HEADING.finditer(text)]
+                    letters.append(max(set(found), key=found.count) if found else "")
+            finally:
+                pdf.close()
     except Exception as exc:  # the fast pass is an optimisation only
         log.info("CDS page pre-scan skipped: %s", type(exc).__name__)
         return range(n_pages)

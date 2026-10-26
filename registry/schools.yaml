@@ -244,3 +244,135 @@ schools:
       - year: "2025-2026"
         url: https://www.troy.edu/_assets/irpe/_documents/cds-2025-2026.pdf
         format: pdf
+  - unitid: 101480
+    name: "Jacksonville State University"
+    cds:
+      - year: "2023-2024"
+        url: https://www.jsu.edu/ire/research/CDS/cds_2023-2024.pdf
+        format: pdf
+  - unitid: 100706
+    name: "University of Alabama in Huntsville"
+    cds:
+      - year: "2025-2026"
+        url: https://www.uah.edu/images/administrative/provost/oir/university_of_alabama_in_huntsville_cds_2025-2026.pdf
+        format: pdf
+  - unitid: 101879
+    name: "University of North Alabama"
+    cds:
+      - year: "2025-2026"
+        url: https://www.una.edu/research/Institutional Data/una-common-data-set-2025-2026.pdf
+        format: pdf
+  - unitid: 102094
+    name: "University of South Alabama"
+    cds:
+      - year: "2025-2026"
+        url: https://www.southalabama.edu/departments/institutionalresearch/resources/usa-cds-2025-2026.pdf
+        format: pdf
+  - unitid: 106397
+    name: "University of Arkansas"
+    cds:
+      - year: "2025-2026"
+        url: https://osai.uark.edu/datasets/cds/cds25-26v4.pdf
+        format: pdf
+  - unitid: 109651
+    name: "Art Center College of Design"
+    cds:
+      - year: "2024-2025"
+        url: https://cms.artcenter.edu/assets/24118/src/ArtCenter-CDS-2024-2025.pdf
+        format: pdf
+  - unitid: 110361
+    name: "California Baptist University"
+    cds:
+      - year: "2025-2026"
+        url: https://calbaptist.edu/about/leadership/provost/educational-effectiveness/institutional-research/pdfs/CDS-PDF-2025-2026%20-%20All.pdf
+        format: pdf
+  - unitid: 110413
+    name: "California Lutheran University"
+    cds:
+      - year: "2025-2026"
+        url: https://www.callutheran.edu/about/factbook/2025_2026_Common_Data_Set.pdf
+        format: pdf
+  - unitid: 115755
+    name: "California State Polytechnic University-Humboldt"
+    cds:
+      - year: "2025-2026"
+        url: https://www.humboldt.edu/sites/default/files/irar/2025-12/cds-2025-26-cal-poly-humboldt.pdf
+        format: pdf
+  - unitid: 110529
+    name: "California State Polytechnic University-Pomona"
+    cds:
+      - year: "2025-2026"
+        url: https://www.cpp.edu/data/documents/common-data-sets/cds2025.pdf
+        format: pdf
+  - unitid: 110538
+    name: "California State University-Chico"
+    cds:
+      - year: "2025-2026"
+        url: https://www.csuchico.edu/ir/_assets/documents/cds-2026.pdf
+        format: pdf
+  - unitid: 110583
+    name: "California State University-Long Beach"
+    cds:
+      - year: "2025-2026"
+        url: https://www.csulb.edu/sites/default/files/2026/documents/CDS%202025%20-%202026%20%28PDF%29_0.pdf
+        format: pdf
+  - unitid: 110592
+    name: "California State University-Los Angeles"
+    cds:
+      - year: "2025-2026"
+        url: https://www.calstatela.edu/sites/default/files/CDS2526_CalStateLA.pdf
+        format: pdf
+  - unitid: 110617
+    name: "California State University-Sacramento"
+    cds:
+      - year: "2025-2026"
+        url: https://www.csus.edu/information-resources-technology/institutional-research/common-data-set/cds_2025-2026-final.pdf
+        format: pdf
+  - unitid: 110510
+    name: "California State University-San Bernardino"
+    cds:
+      - year: "2025-2026"
+        url: https://www.csusb.edu/sites/default/files/upload/file/2026/CDS_2025-2026_NEW.pdf
+        format: pdf
+  - unitid: 117946
+    name: "Loyola Marymount University"
+    cds:
+      - year: "2025-2026"
+        url: https://academics.lmu.edu/media/lmuacademics/strategicplanningacademiceffectiveness/officeofinstitutionalresearch/documents/CDS 2025-26_20260518.pdf
+        format: pdf
+  - unitid: 120403
+    name: "Otis College of Art and Design"
+    cds:
+      - year: "2024-2025"
+        url: https://www.otis.edu/about/documents/CDS%202024-2025_03282025_FINALv2.pdf
+        format: pdf
+  - unitid: 122755
+    name: "San Jose State University"
+    cds:
+      - year: "2024-2025"
+        url: https://www.sjsu.edu/irsa/docs/cds/20250411_CDS_2024-2025%20FINAL.pdf
+        format: pdf
+  - unitid: 110644
+    name: "University of California-Davis"
+    cds:
+      - year: "2025-2026"
+        url: https://aggiedata.ucdavis.edu/sites/g/files/dgvnsk1841/files/media/documents/CDS_UCD_0.pdf
+        format: pdf
+  - unitid: 110671
+    name: "University of California-Riverside"
+    cds:
+      - year: "2025-2026"
+        url: https://ir.ucr.edu/sites/default/files/2026-05/cds-2025-2026.pdf
+        format: pdf
+  - unitid: 110680
+    name: "University of California-San Diego"
+    cds:
+      - year: "2025-2026"
+        url: https://ir.ucsd.edu/stats/undergrad/CDS-2025-2026-Final2.pdf
+        format: pdf
+  - unitid: 110714
+    name: "University of California-Santa Cruz"
+    cds:
+      - year: "2025-2026"
+        url: https://mediafiles.ucsc.edu/iraps/common-data-set/common-data-set-2025-26-revised.pdf
+        format: pdf

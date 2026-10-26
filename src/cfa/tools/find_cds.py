@@ -32,6 +32,7 @@ from urllib.robotparser import RobotFileParser
 from cfa import config
 from cfa.sources.cds.adapter import parse_document
 from cfa.sources.cds.fetch import fetch_cds
+from cfa.sources.cds.parse_pdf import PDFIUM_LOCK
 from cfa.sources.http import HttpClient
 from cfa.sources.registry import load_bundled
 from cfa.sources.urban_ipeds import is_candidate_college
@@ -173,11 +174,12 @@ def document_year(content: bytes, fmt: str) -> str | None:
         if fmt == "pdf":
             import pypdfium2 as pdfium
 
-            pdf = pdfium.PdfDocument(content)
-            try:
-                text = " ".join(pdf[i].get_textpage().get_text_range() for i in range(min(2, len(pdf))))
-            finally:
-                pdf.close()
+            with PDFIUM_LOCK:  # pdfium is not thread-safe
+                pdf = pdfium.PdfDocument(content)
+                try:
+                    text = " ".join(pdf[i].get_textpage().get_text_range() for i in range(min(2, len(pdf))))
+                finally:
+                    pdf.close()
         else:
             import io
 
