@@ -8,6 +8,7 @@ import html
 import logging
 from collections import Counter
 from pathlib import Path
+from typing import Any
 
 from PySide6.QtCore import QSettings, Qt, QThreadPool, QTimer
 from PySide6.QtGui import QAction, QTextDocument
@@ -70,6 +71,12 @@ class MainWindow(QMainWindow):
         self.registry: Registry = Registry(schema_version=1, schools=[])
         self.records: list[CollegeRecord] = []
         self.worker: Worker | None = None
+        self._pending_updates: dict[int, CollegeRecord] = {}
+        self._keep_page = False
+        self._update_timer = QTimer(self)
+        self._update_timer.setSingleShot(True)
+        self._update_timer.setInterval(600)
+        self._update_timer.timeout.connect(self._apply_updates)
         # States the last all-colleges search covered ([] = every state); None = curated list run.
         self.searched_states: list[str] | None = None
         self.settings = QSettings("CollegeFitAdvisor", "CollegeFitAdvisor")
@@ -301,6 +308,8 @@ class MainWindow(QMainWindow):
         states, only = self.student.preferred_states()
         search_all = unitids is None and self.student.search_all()
 
+        hooks: dict[str, Any] = {}  # filled below, once the worker exists
+
         def job(progress, cancel) -> RunResult:
             if search_all:
                 return asyncio.run(
@@ -311,6 +320,7 @@ class MainWindow(QMainWindow):
                         progress=progress,
                         cancel=cancel,
                         executor=parse_pool(),
+                        **hooks,
                     )
                 )
             return asyncio.run(
@@ -321,10 +331,15 @@ class MainWindow(QMainWindow):
                     cancel=cancel,
                     executor=parse_pool(),
                     unitids=unitids,
+                    **hooks,
                 )
             )
 
         self.worker = Worker(job)
+        if unitids is None:  # a full run shows results before the Common Data Sets are read
+            hooks.update(on_partial=self.worker.emit_partial, on_update=self.worker.emit_update)
+            self.worker.signals.partial.connect(lambda recs: self._on_partial(recs, search_all, states, only))
+            self.worker.signals.update.connect(self._queue_update)
         self.worker.signals.progress.connect(self._on_progress)
         self.worker.signals.finished.connect(lambda res: self._on_finished(res, partial=unitids is not None))
         self.worker.signals.failed.connect(self._on_failed)
@@ -356,6 +371,8 @@ class MainWindow(QMainWindow):
 
     def _on_finished(self, result: RunResult, partial: bool = False) -> None:
         self._end_run()
+        self._update_timer.stop()
+        self._pending_updates = {}
         if partial:
             by_id = {r.unitid: r for r in result.records}
             self.records = [by_id.get(r.unitid, r) for r in self.records]
@@ -368,15 +385,37 @@ class MainWindow(QMainWindow):
         if result.cancelled:
             self.show_toast(f"Cancelled — showing {len(result.records)} schools fetched so far.")
 
-    def rescore(self) -> None:
+    def _on_partial(
+        self, records: list[CollegeRecord], search_all: bool, states: list[str], only: bool
+    ) -> None:
+        self.records = records
+        self.searched_states = (states if only else []) if search_all else None
+        self.rescore()
+
+    def _queue_update(self, record: CollegeRecord) -> None:
+        """Schools whose Common Data Set just arrived; applied in batches so the view stays calm."""
+        self._pending_updates[record.unitid] = record
+        if not self._update_timer.isActive():
+            self._update_timer.start()
+
+    def _apply_updates(self) -> None:
+        if not self._pending_updates:
+            return
+        updates, self._pending_updates = self._pending_updates, {}
+        self.records = [updates.get(r.unitid, r) for r in self.records]
+        self.rescore(keep_page=True)
+
+    def rescore(self, keep_page: bool = False) -> None:
         try:
             profile = self.student.profile()
         except Exception:
             return
         rows = [ResultRow(r, academic.classify(profile, r), culture.score(profile, r)) for r in self.records]
+        self._keep_page = keep_page
         self.table.results_model.set_rows(rows)
         self.apply_filters()
         self.apply_sort()
+        self._keep_page = False
 
     def _update_health(self) -> None:
         counts: dict[str, Counter] = {}
@@ -437,7 +476,7 @@ class MainWindow(QMainWindow):
                 f"None of the {total} schools are in {', '.join(sorted(proxy.states))}. Untick "
                 '"Only show schools in these states" on the Student tab to see the rest.'
             )
-        self.cards.set_rows(rows, empty)
+        self.cards.set_rows(rows, empty, keep_page=self._keep_page)
 
     # ----------------------------------------------------------------- detail
     def open_detail(self, index) -> None:

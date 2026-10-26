@@ -270,3 +270,39 @@ def test_federal_only_badge_and_filter(qtbot, window):
     assert "Full data" in [b.text() for b in badges(rows[0])]
     window.filters.check("data_level", "Full")
     assert window.table.proxy.rowCount() == 1
+
+
+def test_window_shows_results_before_full_data_and_updates_in_place(qtbot, monkeypatch):
+    from cfa.pipeline import CDS_LOADING
+    from cfa.sources.base import FetchResult
+
+    first = sample_records()
+    first[0].links["cds"] = "https://alpha.example.edu/cds.pdf"
+    first[0].source_status["Common Data Set"] = FetchResult(
+        "Common Data Set", Status.NOT_REPORTED, note=CDS_LOADING
+    ).as_field()
+    done = sample_records()
+    done[0].links["cds"] = "https://alpha.example.edu/cds.pdf"
+    gate = __import__("threading").Event()
+
+    async def fake_run_search(registry, **kw):
+        kw["on_partial"](first)
+        await asyncio.to_thread(gate.wait, 5)
+        kw["on_update"](done[0])
+        return RunResult(records=done, searched_states=kw["states"])
+
+    monkeypatch.setattr(mw, "run_search", fake_run_search)
+    monkeypatch.setattr(mw, "parse_pool", lambda: None)
+    w = mw.MainWindow(load_remote_registry=False)
+    qtbot.addWidget(w)
+    w.run_match()
+    qtbot.waitUntil(lambda: len(w.cards.cards) == 2, timeout=5000)
+    assert w.worker is not None  # still reading Common Data Sets
+    from cfa.ui.results_cards import badges
+
+    alpha = next(c for c in w.cards.cards if c.row.record.name == "Alpha U")
+    assert "Reading full data…" in [b.text() for b in badges(alpha.row)]
+    gate.set()
+    qtbot.waitUntil(lambda: w.worker is None, timeout=5000)
+    alpha = next(c for c in w.cards.cards if c.row.record.name == "Alpha U")
+    assert "Full data" in [b.text() for b in badges(alpha.row)]

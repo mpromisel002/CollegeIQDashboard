@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import io
 import logging
+import re
+import threading
 from typing import Any
 
 from cfa.sources.cds.layout import EMPTY_BOX_CHARS, MARK_CHARS, Document, Row, Token
@@ -129,6 +131,51 @@ def _row(words: list[dict[str, Any]], page_no: int) -> Row:
     return Row([Token(str(w["text"]), float(w["x0"]), float(w["x1"])) for w in words], top, page_no)
 
 
+# pdfium is not thread-safe (concurrent use crashes the process), and documents may be parsed on
+# several threads when no process pool is available. Every pdfium call goes through this lock.
+PDFIUM_LOCK = threading.Lock()
+
+# A page's section is the letter of most numbered headings on it ("C1 Applications", "F1. Percent…").
+_HEADING = re.compile(r"(?m)^\s*([A-J])\d{1,2}\s*[.:)]?\s+[A-Z]")
+# The extractors read sections in parts B, C, E and F only (see sections.EXTRACTORS).
+_FIRST, _LAST = "B", "F"
+
+
+def needed_pages(content: bytes, n_pages: int) -> range:
+    """Pages from the first part-B page to the last part-F page, found from the fast text layer.
+
+    Laying out a page is the slow step (seconds per document); parts G-J (expenses, financial aid,
+    faculty, degrees) are often half of a CDS and are never read. Falls back to every page when
+    the parts can't be told apart.
+    """
+    try:
+        import pypdfium2 as pdfium
+
+        letters = []
+        with PDFIUM_LOCK:
+            pdf = pdfium.PdfDocument(content)
+            try:
+                for i in range(min(len(pdf), n_pages)):
+                    page = pdf[i]
+                    textpage = page.get_textpage()
+                    text = textpage.get_text_range()
+                    textpage.close()
+                    page.close()
+                    found = [m.group(1) for m in _HEADING.finditer(text)]
+                    letters.append(max(set(found), key=found.count) if found else "")
+            finally:
+                pdf.close()
+    except Exception as exc:  # the fast pass is an optimisation only
+        log.info("CDS page pre-scan skipped: %s", type(exc).__name__)
+        return range(n_pages)
+    if "C" not in letters or "F" not in letters:
+        return range(n_pages)
+    first = letters.index(_FIRST) if _FIRST in letters else 0
+    first = min(first, letters.index("C"))
+    last = len(letters) - 1 - letters[::-1].index(_LAST)
+    return range(first, min(n_pages, last + 2))  # +1 page: a section can run onto the next page
+
+
 def parse_pdf(content: bytes) -> Document:
     import pdfplumber
 
@@ -138,7 +185,11 @@ def parse_pdf(content: bytes) -> Document:
         raise PdfError(f"Not a readable PDF ({type(exc).__name__})") from exc
     rows: list[Row] = []
     try:
-        for i, page in enumerate(pdf.pages[:MAX_PAGES]):
+        pages = pdf.pages[:MAX_PAGES]
+        keep = needed_pages(content, len(pages))
+        for i, page in enumerate(pages):
+            if i not in keep:
+                continue
             try:
                 rows.extend(_page_rows(page, i))
             except Exception as exc:  # one bad page must not sink the document

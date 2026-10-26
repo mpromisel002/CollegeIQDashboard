@@ -15,6 +15,8 @@ log = logging.getLogger(__name__)
 
 class WorkerSignals(QObject):
     progress = Signal(int, int, str)
+    partial = Signal(object)  # list[CollegeRecord]: results before the Common Data Sets are read
+    update = Signal(object)  # CollegeRecord: one school again, now with its Common Data Set
     finished = Signal(object)
     failed = Signal(str)
 
@@ -45,6 +47,18 @@ class Worker(QRunnable):
         try:
             self.signals.finished.emit(result)
         except RuntimeError:  # receiver deleted during shutdown
+            pass
+
+    def emit_partial(self, records: Any) -> None:
+        try:
+            self.signals.partial.emit(records)
+        except RuntimeError:
+            pass
+
+    def emit_update(self, record: Any) -> None:
+        try:
+            self.signals.update.emit(record)
+        except RuntimeError:
             pass
 
     def _progress(self, done: int, total: int, label: str) -> None:

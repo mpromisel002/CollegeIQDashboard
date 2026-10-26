@@ -89,3 +89,19 @@ def test_f1_less_than_one_percent():
 def test_garbage_documents_do_not_raise():
     assert parse_document(b"%PDF-1.4 nonsense", "pdf", None)[1]
     assert parse_document(b"PK\x03\x04 nonsense", "xlsx", None)[1]
+
+
+def test_pdf_page_prescan_is_safe_across_threads():
+    """pdfium crashes the process if two threads use it at once; parse_pdf must serialise it."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    from cfa.sources.cds.parse_pdf import needed_pages
+    from tests.conftest import CDS
+
+    docs = [
+        (CDS / n).read_bytes() for n in ("alabama_2025-26.pdf", "duke_2025-26.pdf", "montana_2025-26.pdf")
+    ]
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        ranges = list(pool.map(lambda d: needed_pages(d, 200), docs * 8))
+    assert all(len(r) > 0 for r in ranges)
+    assert len({(r.start, r.stop) for r in ranges}) == 3  # each document gives the same answer every time

@@ -2,8 +2,9 @@
 
     python -m cfa.tools.validate_registry [--registry registry/schools.yaml] [--json out.json]
 
-A school passes when C1 parses, C11 or C12 parses, and F1 yields at least one value
-(PLAN §4). Exit code 1 if any school fails.
+A school passes when C1 (applicants/admits) parses and C11 or C12 (GPA) parses. F1 (Greek life,
+housing) is reported but optional since v1.5: many schools publish GPA but leave F1 blank, and the
+app shows "Not reported" for missing fields. Exit code 1 if any school fails.
 """
 
 from __future__ import annotations
@@ -37,8 +38,6 @@ def passes(sections: dict[str, SectionResult]) -> tuple[bool, str]:
         reasons.append("C1 did not parse")
     if not (ok("C11") or ok("C12")):
         reasons.append("neither C11 nor C12 parsed")
-    if not ok("F1"):
-        reasons.append("F1 did not parse")
     return not reasons, "; ".join(reasons)
 
 

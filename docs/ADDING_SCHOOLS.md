@@ -42,7 +42,7 @@ bundled into the exe and shows a banner.
    ```
 
 4. **Validate:** `python -m cfa.tools.validate_registry`. A school must show `PASS`
-   (C1 parses, C11 or C12 parses, F1 gives at least one value). If it fails, do not commit it — add it
+   (C1 parses and C11 or C12 parses; F1 is optional). If it fails, do not commit it — add it
    to `docs/registry_failures.md` with the reason.
 5. Open a PR. CI checks the YAML schema; the weekly live smoke run re-validates every link.
 
@@ -58,3 +58,25 @@ run the validator, and push. Old entries can stay as a record but only the lates
 - *C11/C12 not reported* — many selective private colleges do not publish GPA; such schools do not
   meet the registry bar.
 - Some fonts extract as `(cid:NN)` garbage; those sections show "Not reported".
+
+## Finding CDS documents in bulk (`find_cds`)
+
+`python -m cfa.tools.find_cds` proposes registry entries for colleges the registry lacks:
+
+1. `find_cds list --states PA,NY --out todo.json` lists the four-year colleges (IPEDS directory)
+   that are not on the registry, with each college's own web domain.
+2. Add a `urls` list to each entry: pages or files on that college's own site that look like its
+   CDS. Sources used so far: a web search limited to the college's domain (one query per college,
+   "<name> common data set"), and the `source_url`s in collegedata.fyi's public document index
+   (`/rest/v1/cds_manifest`). Never scrape search-engine result pages.
+3. `find_cds check --input todo.json --out found.yaml --report report.json` opens those pages
+   (robots.txt and HTTP 403 respected; Google Drive/SharePoint/Box refused), finds CDS files and
+   per-year CDS pages, reads each document's year, and keeps the newest document that passes the
+   registry rule. It rejects a document whose C1 applicant count is more than 1.5x off IPEDS for
+   that college (usually another campus's CDS) and never assigns one document to two colleges.
+4. Review `found.yaml` (names vs file names: branch campuses and online divisions must not get the
+   main campus's file), paste it under `schools:`, and run `validate_registry` on the new entries.
+
+As of October 2026 every four-year college in IPEDS has been checked once this way; 333 schools
+qualify. Most others publish no CDS, publish one without GPA (C11/C12), host it off-site, block
+automated downloads, or use a layout the parser can't read.

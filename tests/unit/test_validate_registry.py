@@ -40,3 +40,19 @@ def test_only_blocked_passes_with_flag(tmp_path, monkeypatch):
     monkeypatch.setattr(vr, "HttpClient", lambda: real(wait=no_wait))
     assert vr.main(["--registry", str(path), "--allow-blocked"]) == 0
     assert vr.main(["--registry", str(path)]) == 1
+
+
+def test_rule_is_admissions_plus_gpa_and_greek_life_is_optional():
+    from cfa.models.field_value import FieldValue, Status
+    from cfa.sources.cds.sections import SectionResult
+
+    def sec(status=Status.OK):
+        return SectionResult(
+            status, {"x": FieldValue.of(1, "CDS", "2025-2026")} if status is Status.OK else {}
+        )
+
+    assert vr.passes({"C1": sec(), "C11": sec()}) == (True, "")
+    assert vr.passes({"C1": sec(), "C12": sec(), "F1": sec(Status.NOT_REPORTED)})[0]
+    ok, reason = vr.passes({"C1": sec(), "F1": sec()})
+    assert not ok and "C11" in reason
+    assert not vr.passes({"C11": sec()})[0]
