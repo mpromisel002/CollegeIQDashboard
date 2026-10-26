@@ -1948,3 +1948,63 @@ schools:
       - year: "2024-2025"
         url: https://www.mountmarty.edu/globalassets/backend-reconstruction/about-us/academic-excellence/institutional-effectiveness/insteffective.archived/common-data-set-report-2024-2025.pdf
         format: pdf
+  - unitid: 221768
+    name: "The University of Tennessee-Martin"
+    cds:
+      - year: "2025-2026"
+        url: https://www.utm.edu/offices-and-services/office-of-institutional-research/_media/2025-2026/Common Data Set 2025-2026 - C. First-Time, First-Year Admission.pdf
+        format: pdf
+  - unitid: 226091
+    name: "Lamar University"
+    cds:
+      - year: "2024-2025"
+        url: https://www.lamar.edu/data-analytics-reporting-analysis/_files/documents/2024-2025_common_data_set.pdf
+        format: pdf
+  - unitid: 228149
+    name: "St. Mary's University"
+    cds:
+      - year: "2025-2026"
+        url: https://cdn.stmarytx.edu/wp-content/uploads/2026/05/CDS_Completed-2025-2026-PDF.pdf
+        format: pdf
+  - unitid: 229018
+    name: "The University of Texas Permian Basin"
+    cds:
+      - year: "2025-2026"
+        url: https://www.utpb.edu/university-offices/institutional-research-and-effectiveness/docs/comondataset2026-accessible-final.pdf
+        format: pdf
+  - unitid: 225414
+    name: "University of Houston-Clear Lake"
+    cds:
+      - year: "2024-2025"
+        url: https://www.uhcl.edu/about/administrative-offices/institutional-effectiveness/documents/documents-institutional-effectiveness/campus-facts-pdfs/cds-2024-2025-final.xlsx
+        format: xlsx
+  - unitid: 234155
+    name: "Virginia State University"
+    cds:
+      - year: "2025-2026"
+        url: https://www.vsu.edu/files/docs/instit-planning-effectiveness/2025-2026-vsu-common-data-set.pdf
+        format: pdf
+  - unitid: 236133
+    name: "Northwest University"
+    cds:
+      - year: "2025-2026"
+        url: https://www.northwestu.edu/assets/documents/about/Common_Data_Set_Northwest_University_2025-2026.pdf
+        format: pdf
+  - unitid: 487603
+    name: "Northwest University-Center for Online and Extended Education"
+    cds:
+      - year: "2024-2025"
+        url: https://www.northwestu.edu/assets/documents/about/Common_Data_Set_Northwest_University_COEE_2024-2025.pdf
+        format: pdf
+  - unitid: 240365
+    name: "University of Wisconsin-Oshkosh"
+    cds:
+      - year: "2024-2025"
+        url: https://www.uwosh.edu/oir/wp-content/uploads/sites/109/2025/09/CDS-2024-2025-UWO.pdf
+        format: pdf
+  - unitid: 240727
+    name: "University of Wyoming"
+    cds:
+      - year: "2025-2026"
+        url: https://www.uwyo.edu/oia/_files/cds/cds2025-2026.pdf
+        format: pdf
