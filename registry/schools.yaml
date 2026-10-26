@@ -1906,3 +1906,21 @@ schools:
       - year: "2023-2024"
         url: https://www.westfield.ma.edu/documents/cds2023-24pdf
         format: pdf
+  - unitid: 196121
+    name: "SUNY Brockport"
+    cds:
+      - year: "2023-2024"
+        url: https://www.brockport.edu/live/files/7692-common-data-set-2023-2024
+        format: pdf
+  - unitid: 196149
+    name: "State University of New York at Cortland"
+    cds:
+      - year: "2025-2026"
+        url: https://www2.cortland.edu/offices/institutional-research-and-assessment/file-uploads/common-data-sets/CDS_2025-2026_SUNY_Cortland.xlsx
+        format: xlsx
+  - unitid: 196176
+    name: "State University of New York at New Paltz"
+    cds:
+      - year: "2024-2025"
+        url: https://www.newpaltz.edu/media/institutional-research/CDS_2024-2025.xlsx
+        format: xlsx
