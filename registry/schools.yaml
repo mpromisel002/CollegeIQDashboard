@@ -1036,3 +1036,153 @@ schools:
       - year: "2025-2026"
         url: https://irda.wayne.edu/common-data-set/2025-2026-cds.pdf
         format: pdf
+  - unitid: 174783
+    name: "Saint Cloud State University"
+    cds:
+      - year: "2025-2026"
+        url: https://www.stcloudstate.edu/air/_files/documents/common-data-sets/cds_2025-2026.pdf
+        format: pdf
+  - unitid: 174844
+    name: "St Olaf College"
+    cds:
+      - year: "2025-2026"
+        url: https://wp.stolaf.edu/iea/files/2026/01/StOlaf_CDS_2025-26.xlsx-CDS-C.pdf
+        format: pdf
+  - unitid: 178059
+    name: "Maryville University of Saint Louis"
+    cds:
+      - year: "2025-2026"
+        url: https://www.maryville.edu/administrative-offices/wp-content/uploads/sites/28/2026/07/CDS_2025-2026_Final_v3.pdf
+        format: pdf
+  - unitid: 178341
+    name: "Missouri Southern State University"
+    cds:
+      - year: "2024-2025"
+        url: https://www.mssu.edu/academics/institutional-effectiveness/files/2024-2025-MSSU-Common-Data-Set1.pdf
+        format: pdf
+  - unitid: 178387
+    name: "Missouri Western State University"
+    cds:
+      - year: "2025-2026"
+        url: https://www.missouriwestern.edu/ir/wp-content/uploads/sites/169/2026/05/CDS-PDF-2025-2026_MWSU_Final.pdf
+        format: pdf
+  - unitid: 179557
+    name: "Southeast Missouri State University"
+    cds:
+      - year: "2025-2026"
+        url: https://semo.edu/institutional-research/_pdfs/accessible_version_cds-pdf-2025-2026-southeastmissouristateuniversity.pdf
+        format: pdf
+  - unitid: 176965
+    name: "University of Central Missouri"
+    cds:
+      - year: "2025-2026"
+        url: https://www.ucmo.edu/offices/university-analytics-and-institutional-research/common-data-set/common-data-set-2025-2026.pdf
+        format: pdf
+  - unitid: 178402
+    name: "University of Missouri-Kansas City"
+    cds:
+      - year: "2025-2026"
+        url: https://www.umkc.edu/data/docs/cds_2025_2026.pdf
+        format: pdf
+  - unitid: 178420
+    name: "University of Missouri-St Louis"
+    cds:
+      - year: "2025-2026"
+        url: https://www.umsl.edu/~ir/common-data-set/pdf-archive/cds_2025_rv.pdf
+        format: pdf
+  - unitid: 179867
+    name: "Washington University in St Louis"
+    cds:
+      - year: "2024-2025"
+        url: https://washu.edu/app/uploads/2025/06/2024-2025-WashU-CDS.pdf
+        format: pdf
+  - unitid: 176372
+    name: "University of Southern Mississippi"
+    cds:
+      - year: "2023-2024"
+        url: https://www.usm.edu/institutional-research/cds_2023_2024_final.pdf
+        format: pdf
+  - unitid: 180461
+    name: "Montana State University"
+    cds:
+      - year: "2024-2025"
+        url: https://www.montana.edu/data/common-data-set/cds24.pdf
+        format: pdf
+  - unitid: 180179
+    name: "Montana State University Billings"
+    cds:
+      - year: "2025-2026"
+        url: https://www.msubillings.edu/ir/institutionalfacts/cds/CDS_2025-26_C.pdf
+        format: pdf
+  - unitid: 198215
+    name: "Catawba College"
+    cds:
+      - year: "2025-2026"
+        url: https://www.catawba.edu/media/catawba-college/site-assets/pdf/CDS_2025-2026-PDF.pdf
+        format: pdf
+  - unitid: 198835
+    name: "Lenoir-Rhyne University"
+    cds:
+      - year: "2025-2026"
+        url: https://www.lr.edu/sites/default/files/2026-05/common-data-set-2025-2026.pdf
+        format: pdf
+  - unitid: 199102
+    name: "North Carolina A & T State University"
+    cds:
+      - year: "2024-2025"
+        url: https://www.ncat.edu/provost/ospie/cds_2024-2025_-final-20251201.pdf
+        format: pdf
+  - unitid: 199157
+    name: "North Carolina Central University"
+    cds:
+      - year: "2025-2026"
+        url: https://myeol.nccu.edu/sites/default/files/2026-09/CDS-2025-2026.pdf
+        format: pdf
+  - unitid: 199193
+    name: "North Carolina State University at Raleigh"
+    cds:
+      - year: "2024-2025"
+        url: https://report.isa.ncsu.edu/ir/cds/pdfs/CDS_2024-25.v3.pdf
+        format: pdf
+  - unitid: 199218
+    name: "University of North Carolina Wilmington"
+    cds:
+      - year: "2024-2025"
+        url: https://www.uncw.edu/media/pdf/irp/cds-2024-2025.pdf
+        format: pdf
+  - unitid: 199139
+    name: "University of North Carolina at Charlotte"
+    cds:
+      - year: "2025-2026"
+        url: https://ir.charlotte.edu/wp-content/uploads/sites/871/2026/06/CDS-2025-26.xlsx
+        format: xlsx
+  - unitid: 199281
+    name: "University of North Carolina at Pembroke"
+    cds:
+      - year: "2025-2026"
+        url: https://www.uncp.edu/_files/2025-2026-common-data-set.pdf
+        format: pdf
+  - unitid: 200004
+    name: "Western Carolina University"
+    cds:
+      - year: "2024-2025"
+        url: https://www.wcu.edu/_files/learn/provost/2024-2025-CDS.pdf
+        format: pdf
+  - unitid: 200332
+    name: "North Dakota State University-Main Campus"
+    cds:
+      - year: "2024-2025"
+        url: https://www.ndsu.edu/sites/default/files/fileadmin/oira/Common_Data_Set/NDSU_CDS_2024-2025.xlsx
+        format: xlsx
+  - unitid: 181002
+    name: "Creighton University"
+    cds:
+      - year: "2025-2026"
+        url: https://www.creighton.edu/sites/default/files/CDS_2025-2026_C.pdf
+        format: pdf
+  - unitid: 181215
+    name: "University of Nebraska at Kearney"
+    cds:
+      - year: "2025-2026"
+        url: https://www.unk.edu/factbook/_files/cds-2025-26-pdf_final.pdf
+        format: pdf
