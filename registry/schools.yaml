@@ -1924,3 +1924,27 @@ schools:
       - year: "2024-2025"
         url: https://www.newpaltz.edu/media/institutional-research/CDS_2024-2025.xlsx
         format: xlsx
+  - unitid: 213598
+    name: "Lincoln University"
+    cds:
+      - year: "2025-2026"
+        url: https://www.lincoln.edu/_files/institutional-advancement/_2025-2026-CDS_FINAL1.pdf
+        format: pdf
+  - unitid: 216038
+    name: "Slippery Rock University of Pennsylvania"
+    cds:
+      - year: "2024-2025"
+        url: https://www.sru.edu/documents/offices/analytics-decision-support/whitepapers/CDS_2024-2025_SRU.pdf
+        format: pdf
+  - unitid: 216852
+    name: "Widener University"
+    cds:
+      - year: "2024-2025"
+        url: https://www.widener.edu/sites/default/files/2025-09/CDS_2024-2025-WU.pdf
+        format: pdf
+  - unitid: 219198
+    name: "Mount Marty University"
+    cds:
+      - year: "2024-2025"
+        url: https://www.mountmarty.edu/globalassets/backend-reconstruction/about-us/academic-excellence/institutional-effectiveness/insteffective.archived/common-data-set-report-2024-2025.pdf
+        format: pdf
