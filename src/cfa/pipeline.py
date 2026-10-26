@@ -14,12 +14,14 @@ import threading
 from collections.abc import Callable
 from concurrent.futures import Executor, ProcessPoolExecutor
 from dataclasses import dataclass, field
+from typing import Any
 
 from cfa import config
 from cfa.aggregate import merge
 from cfa.models.college import CollegeRecord
 from cfa.models.field_value import Status
 from cfa.sources.base import FetchResult, SourceAdapter
+from cfa.sources.cds.adapter import SOURCE as CDS_SOURCE
 from cfa.sources.cds.adapter import CdsAdapter
 from cfa.sources.http import HttpClient
 from cfa.sources.registry import Registry, School
@@ -79,24 +81,21 @@ async def fetch_school(school: School, adapters: list[SourceAdapter]) -> College
     return merge(school.unitid, school.name, list(results), school_links(school))
 
 
-async def _fetch_many(
-    schools: list[tuple[int, str, dict[str, str]]],
-    adapters: list[SourceAdapter],
-    out: RunResult,
+CDS_LOADING = "Reading the Common Data Set…"
+RecordsFn = Callable[[list[CollegeRecord]], None]
+RecordFn = Callable[[CollegeRecord], None]
+
+
+async def _drain(
+    tasks: dict[asyncio.Task, tuple[int, str, dict[str, str]]],
+    on_done: Callable[[tuple[int, str, dict[str, str]], Any], None],
+    on_error: Callable[[tuple[int, str, dict[str, str]]], None],
     progress: ProgressFn | None,
+    label: Callable[[str], str],
     cancel: threading.Event | None,
-) -> None:
-    """Fetch and merge (unitid, fallback name, links) in parallel, reporting progress as each lands."""
-
-    async def one(unitid: int, name: str, links: dict[str, str]) -> CollegeRecord:
-        results: list[FetchResult] = await asyncio.gather(*(a.fetch(unitid) for a in adapters))
-        return merge(unitid, name, list(results), links)
-
-    done = 0
-    total = len(schools)
-    if progress:
-        progress(0, total, "Fetching schools")
-    tasks = {asyncio.create_task(one(*s)): s for s in schools}
+) -> bool:
+    """Wait for tasks, reporting progress as each lands. Returns False if cancelled."""
+    done, total = 0, len(tasks)
     pending = set(tasks)
     while pending:
         finished, pending = await asyncio.wait(pending, timeout=0.25, return_when=asyncio.FIRST_COMPLETED)
@@ -104,21 +103,91 @@ async def _fetch_many(
             for t in pending:
                 t.cancel()
             await asyncio.gather(*pending, return_exceptions=True)
-            out.cancelled = True
-            break
+            return False
         for t in finished:
-            unitid, name, links = tasks[t]
+            item = tasks[t]
             done += 1
-            exc = t.exception()
-            if exc is not None:  # defensive: adapters should never raise
-                log.error("Unexpected error for unitid %s: %s", unitid, type(exc).__name__)
-                out.records.append(merge(unitid, name, [], links))
+            if t.exception() is not None:  # defensive: adapters should never raise
+                log.error("Unexpected error for unitid %s: %s", item[0], type(t.exception()).__name__)
+                on_error(item)
             else:
-                out.records.append(t.result())
+                on_done(item, t.result())
             if progress:
-                progress(done, total, name)
+                progress(done, total, label(item[1]))
+    return True
+
+
+async def _fetch_many(
+    schools: list[tuple[int, str, dict[str, str]]],
+    adapters: list[SourceAdapter],
+    out: RunResult,
+    progress: ProgressFn | None,
+    cancel: threading.Event | None,
+    *,
+    cds: SourceAdapter | None = None,
+    on_partial: RecordsFn | None = None,
+    on_update: RecordFn | None = None,
+) -> None:
+    """Fetch and merge (unitid, fallback name, links) in parallel.
+
+    Two phases: every school from the fast sources first, then the Common Data Sets (seconds each to
+    read). on_partial gets the records after phase one, with "still loading" CDS fields, so results
+    can be shown straight away; on_update gets each record again once its CDS is in.
+    """
+    fast: dict[int, list[FetchResult]] = {}
+    slow = [s for s in schools if cds is not None and s[2].get("cds")]
+    slow_ids = {s[0] for s in slow}
+    loading = FetchResult(CDS_SOURCE, Status.NOT_REPORTED, note=CDS_LOADING)
+
+    async def phase_one(unitid: int, name: str, links: dict[str, str]) -> CollegeRecord:
+        results = list(await asyncio.gather(*(a.fetch(unitid) for a in adapters)))
+        if cds is not None and unitid not in slow_ids:
+            results.append(await cds.fetch(unitid))  # instant: no document listed
+        fast[unitid] = results
+        return merge(unitid, name, results + ([loading] if unitid in slow_ids else []), links)
+
+    def keep(item: tuple[int, str, dict[str, str]], record: Any) -> None:
+        out.records.append(record)
+
+    def broken(item: tuple[int, str, dict[str, str]]) -> None:
+        out.records.append(merge(item[0], item[1], [], item[2]))
+
+    if progress:
+        progress(0, len(schools), "Fetching schools")
+    tasks: dict[asyncio.Task, tuple[int, str, dict[str, str]]] = {
+        asyncio.create_task(phase_one(*s)): s for s in schools
+    }
+    finished = await _drain(tasks, keep, broken, progress, lambda name: name, cancel)
     order = {s[0]: i for i, s in enumerate(schools)}
     out.records.sort(key=lambda r: order.get(r.unitid, 0))
+    if not finished:
+        out.cancelled = True
+        return
+    if not slow or cds is None:
+        return
+    if on_partial:
+        on_partial(list(out.records))
+    where = {r.unitid: i for i, r in enumerate(out.records)}
+    reader = cds
+
+    def update(item: tuple[int, str, dict[str, str]], result: Any) -> None:
+        unitid, name, links = item
+        record = merge(unitid, name, [*fast.get(unitid, []), result], links)
+        out.records[where[unitid]] = record
+        if on_update:
+            on_update(record)
+
+    def failed(item: tuple[int, str, dict[str, str]]) -> None:
+        note = FetchResult(CDS_SOURCE, Status.SOURCE_UNAVAILABLE, note="Could not read the document")
+        update(item, note)
+
+    reads: dict[asyncio.Task, tuple[int, str, dict[str, str]]] = {
+        asyncio.create_task(reader.fetch(s[0])): s for s in slow
+    }
+    if not await _drain(
+        reads, update, failed, progress, lambda name: f"Reading Common Data Sets: {name}", cancel
+    ):
+        out.cancelled = True
 
 
 async def run_all(
@@ -129,6 +198,8 @@ async def run_all(
     cancel: threading.Event | None = None,
     http: HttpClient | None = None,
     executor: Executor | None = None,
+    on_partial: RecordsFn | None = None,
+    on_update: RecordFn | None = None,
     unitids: list[int] | None = None,
 ) -> RunResult:
     """The curated list only (or just `unitids`): every source, school by school."""
@@ -148,7 +219,16 @@ async def run_all(
         listed = {s.unitid for s in registry.schools}
         # A school found by run_search (not on the list) can be retried too; IPEDS supplies its name.
         items += [(u, f"UnitID {u}", {}) for u in (unitids or []) if u not in listed]
-        await _fetch_many(items, adapters, out, progress, cancel)
+        await _fetch_many(
+            items,
+            adapters[:2],
+            out,
+            progress,
+            cancel,
+            cds=adapters[2],
+            on_partial=on_partial,
+            on_update=on_update,
+        )
     finally:
         if own_http:
             await client.__aexit__(None, None, None)
@@ -164,6 +244,8 @@ async def run_search(
     cancel: threading.Event | None = None,
     http: HttpClient | None = None,
     executor: Executor | None = None,
+    on_partial: RecordsFn | None = None,
+    on_update: RecordFn | None = None,
 ) -> RunResult:
     """Every four-year college in `states` (all states if empty), not only the curated list.
 
@@ -201,7 +283,14 @@ async def run_search(
             )
             wanted = set(states or [])
             curated = await run_all(
-                registry, api_key=api_key, progress=progress, cancel=cancel, http=client, executor=executor
+                registry,
+                api_key=api_key,
+                progress=progress,
+                cancel=cancel,
+                http=client,
+                executor=executor,
+                on_partial=on_partial,
+                on_update=on_update,
             )
             curated.note = out.note
             if wanted:
@@ -230,7 +319,16 @@ async def run_search(
             for uid in sorted(picked, key=lambda u: name_of(u).lower())
         ]
         out.searched_states = list(states or [])
-        await _fetch_many(items, [urban, scorecard, cds], out, progress, cancel)
+        await _fetch_many(
+            items,
+            [urban, scorecard],
+            out,
+            progress,
+            cancel,
+            cds=cds,
+            on_partial=on_partial,
+            on_update=on_update,
+        )
     finally:
         if own_http:
             await client.__aexit__(None, None, None)

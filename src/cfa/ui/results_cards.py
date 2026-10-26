@@ -18,8 +18,10 @@ from PySide6.QtWidgets import (
 
 from cfa.models.college import CollegeRecord
 from cfa.models.field_value import FieldValue
+from cfa.pipeline import CDS_LOADING
 from cfa.scoring.academic import REACH, SAFETY, TARGET
 from cfa.scoring.culture import greek_pct
+from cfa.sources.cds.sections import SOURCE as CDS_SOURCE
 from cfa.ui.format import fmt_value
 from cfa.ui.results_table import ResultRow, location, selectivity
 from cfa.ui.theme import named, pill
@@ -53,7 +55,9 @@ def badges(row: ResultRow) -> list[QLabel]:
         out.append(
             pill("Greek life" if g > 0 else "No Greek life", "neutral", f"About {g:.0f}% in Greek life")
         )
-    if has_cds(r):
+    if cds_loading(r):
+        out.append(pill("Reading full data…", "federal", "The school's Common Data Set is still being read"))
+    elif has_cds(r):
         out.append(pill("Full data", "cds", "Includes the school's Common Data Set: GPA, Greek life, ED/EA"))
     else:
         out.append(
@@ -65,6 +69,11 @@ def badges(row: ResultRow) -> list[QLabel]:
             )
         )
     return out
+
+
+def cds_loading(r: CollegeRecord) -> bool:
+    status = r.source_status.get(CDS_SOURCE)
+    return status is not None and status.note == CDS_LOADING
 
 
 def has_cds(r: CollegeRecord) -> bool:
@@ -257,10 +266,20 @@ class ResultCards(QWidget):
         self.empty_text = ""
         self.set_rows([], "Run a match to see schools here.")
 
-    def set_rows(self, rows: list[ResultRow], empty_text: str = "No schools match these filters.") -> None:
+    def set_rows(
+        self,
+        rows: list[ResultRow],
+        empty_text: str = "No schools match these filters.",
+        keep_page: bool = False,
+    ) -> None:
         self.rows = rows
         self.empty_text = empty_text
-        self.show_page(0)
+        if keep_page:
+            scroll = self.area.verticalScrollBar().value()
+            self.show_page(self.page)
+            self.area.verticalScrollBar().setValue(scroll)
+        else:
+            self.show_page(0)
 
     def show_page(self, page: int) -> None:
         pages = max(1, -(-len(self.rows) // self.PAGE_SIZE))

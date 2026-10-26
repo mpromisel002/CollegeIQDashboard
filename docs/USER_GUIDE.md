@@ -35,6 +35,9 @@ fallbacks come from IPEDS instead. **Test connections** shows each source's heal
 4. **Run Match** (progress bar; **Cancel** stops early). A few states take under a minute; the whole
    country (about 1,700 colleges) takes a few minutes because IPEDS is slow to answer some tables.
    If you add a state after a search, the header says it wasn't searched yet; run the match again.
+   Results appear as soon as the federal data is in. Schools on the curated list show **Reading full
+   data…** while their Common Data Set is read (a few seconds each), then switch to **Full data** and
+   their tier and culture score update in place.
 5. Results appear as **Cards**, 20 per page: tier, public/private, selectivity, setting and Greek-life badges, key
    stats, and why the school got its tier and culture score. Switch to **Table** for a compact,
    column-sortable list. **Sort by** offers best match (Safety → Target → Reach, best culture fit

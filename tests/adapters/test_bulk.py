@@ -167,3 +167,33 @@ async def test_run_search_falls_back_to_curated_list_when_ipeds_is_down(http):
     result = await run_search(REG, states=[], http=http)
     assert "curated list" in result.note
     assert [r.unitid for r in result.records] == [3]
+
+
+REG_CDS = parse_registry("""
+schema_version: 1
+schools:
+  - unitid: 1
+    name: Alpha University
+    cds: [{year: "2025-2026", url: "https://alpha.example.edu/cds.pdf", format: pdf}]
+""")
+
+
+@respx.mock
+async def test_results_arrive_before_the_common_data_sets(http):
+    from cfa.pipeline import CDS_LOADING
+
+    tables = {("directory", 2025): [directory_row(1, "Alpha University"), directory_row(4, "Delta College")]}
+    handle, _calls = router(tables)
+    respx.get(url__startswith=BASE).mock(side_effect=handle)
+    respx.get("https://alpha.example.edu/cds.pdf").respond(404)
+    partial, updates = [], []
+    result = await run_search(
+        REG_CDS, states=["PA"], http=http, on_partial=partial.append, on_update=updates.append
+    )
+    first = {r.name: r for r in partial[0]}
+    assert set(first) == {"Alpha University", "Delta College"}
+    assert first["Alpha University"].source_status["Common Data Set"].note == CDS_LOADING
+    assert first["Delta College"].source_status["Common Data Set"].note != CDS_LOADING
+    assert [r.name for r in updates] == ["Alpha University"]  # only listed schools are read
+    final = {r.name: r for r in result.records}
+    assert final["Alpha University"].source_status["Common Data Set"].note != CDS_LOADING
