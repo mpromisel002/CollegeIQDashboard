@@ -113,8 +113,34 @@ def stats(row: ResultRow) -> list[tuple[str, str, str]]:
             "—" if pct is None else f"~{pct:.0f}th pct",
             "Share of enrolled first-years with a lower GPA (from CDS C11)",
         ),
+        ("Tuition & fees", *tuition(r)),
+        ("Average net price", *field("net_price_avg")),
+        ("Merit scholarships", *merit(r)),
+        ("Need met (average)", *field("need_met_pct")),
     ]
     return rows
+
+
+def tuition(r: CollegeRecord) -> tuple[str, str]:
+    """One price for privates; in-state / out-of-state for publics."""
+    ins, out = r.get("tuition_in_state"), r.get("tuition_out_state")
+    if not ins.ok and not out.ok:
+        return "—", fmt_value("tuition_in_state", ins)
+    if ins.ok and out.ok and ins.value != out.value:
+        return f"${int(ins.value):,} / ${int(out.value):,}", "In-state / out-of-state, per year"
+    v = ins.value if ins.ok else out.value
+    return f"${int(v):,}", "Per year"
+
+
+def merit(r: CollegeRecord) -> tuple[str, str]:
+    """Share of first-years without need who got a merit scholarship, and the average award (CDS H2A)."""
+    pct, avg = r.get("merit_aid_pct"), r.get("avg_merit_award")
+    if not pct.ok:
+        return "—", "From the school's Common Data Set (H2A); " + fmt_value("merit_aid_pct", pct).lower()
+    tip = "First-years with no financial need who got a merit scholarship, and the average award (CDS H2A)"
+    if avg.ok and pct.value > 0:
+        return f"{pct.value:.0f}% · avg ${int(avg.value):,}", tip
+    return f"{pct.value:.0f}%", tip
 
 
 class ResultCard(QFrame):

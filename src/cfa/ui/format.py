@@ -21,6 +21,10 @@ def fmt_value(key: str, fv: FieldValue) -> str:
         text = f"{v:.1f}%".replace(".0%", "%")
         if key.startswith("greek") and v == 0:
             text = "0% (no Greek life reported)"
+    elif kind is Kind.MONEY:
+        text = f"${int(v):,}"
+    elif key == "net_price_by_income" and isinstance(v, dict):
+        text = " · ".join(f"{k}: ${int(val):,}" for k, val in v.items())
     elif kind is Kind.COUNT:
         text = f"{int(v):,}"
     elif kind is Kind.GPA:

@@ -13,8 +13,8 @@ COL_WIDTH = 10.0  # synthetic x units per column so the same proximity logic wor
 # The official template's machine-readable "answer sheet" columns start with codes like C.101 / C.8G04.
 ANSWER_CODE = re.compile(r"^[A-J]\.\s?\d")
 MAX_ROWS_PER_SHEET = 3000
-# Sheets plainly titled as a part the extractors never read ("CDS-H", "H. Financial Aid", "Section J").
-_UNUSED_PART = re.compile(r"^(?:cds[\s_-]*|section[\s_-]*)?([adghij])(?:[\s._:-]|$)", re.IGNORECASE)
+# Sheets plainly titled as a part the extractors never read ("CDS-G", "I. Faculty", "Section J").
+_UNUSED_PART = re.compile(r"^(?:cds[\s_-]*|section[\s_-]*)?([adgij])(?:[\s._:-]|$)", re.IGNORECASE)
 
 
 class XlsxError(Exception):

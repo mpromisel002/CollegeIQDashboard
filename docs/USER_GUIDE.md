@@ -53,6 +53,26 @@ Profiles are saved/loaded as JSON files wherever you choose (**Profile** menu, t
 be exported to CSV or PDF on demand (**Export** menu); exports contain only the schools currently
 shown.
 
+## Cost and scholarships
+
+Cards show tuition and fees (in-state / out-of-state for public schools), the **average net price**
+(what families pay after grants), and, for schools on the curated list, **merit scholarships** and
+**need met**. **View details → Cost and aid** has everything, each with its source:
+
+- **College Scorecard** (needs the free key in **Settings**): tuition and fees, total cost of
+  attendance, average net price, net price by family income (\$0–30k … \$110k+), share of
+  undergraduates with a Pell grant, and median federal debt at graduation. Without a key, tuition
+  comes from IPEDS (one year older) and the other figures are not shown.
+- **Common Data Set H2/H2A** (curated schools only; first-time, full-time first-years):
+  - share given a need-based grant, the average need-based grant, the average share of need met,
+    and the average aid package;
+  - **merit scholarships**: the share of first-years *with no financial need* who were given an
+    institutional scholarship, and its average amount. This is the best public signal of how
+    generous a school is with merit aid; it excludes athletic awards.
+
+**Sort by → Net price (lowest first)** and the **Filters → Average net price** bands use the Scorecard
+average net price.
+
 ## How the tiers work
 
 - **Reach** — admit rate under 15 % (always), or the student is below the school's 25th percentile on

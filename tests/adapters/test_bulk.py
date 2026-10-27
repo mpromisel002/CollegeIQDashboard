@@ -197,3 +197,17 @@ async def test_results_arrive_before_the_common_data_sets(http):
     assert [r.name for r in updates] == ["Alpha University"]  # only listed schools are read
     final = {r.name: r for r in result.records}
     assert final["Alpha University"].source_status["Common Data Set"].note != CDS_LOADING
+
+
+def test_ipeds_tuition_in_and_out_of_state():
+    from cfa.sources.urban_ipeds import _parse_tuition
+
+    rows = [
+        {"level_of_study": 1, "tuition_type": 2, "tuition_fees_ft": 11900},  # in-district: ignored
+        {"level_of_study": 1, "tuition_type": 3, "tuition_fees_ft": 11900},
+        {"level_of_study": 1, "tuition_type": 4, "tuition_fees_ft": 33200},
+        {"level_of_study": 2, "tuition_type": 4, "tuition_fees_ft": 28280},  # graduate: ignored
+        {"level_of_study": 1, "tuition_type": 4, "tuition_fees_ft": -1},
+    ]
+    out = _parse_tuition(rows, "2023")
+    assert out["tuition_in_state"].value == 11900 and out["tuition_out_state"].value == 33200

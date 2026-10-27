@@ -6,7 +6,7 @@ from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QCheckBox, QGroupBox, QLabel, QPushButton, QScrollArea, QVBoxLayout, QWidget
 
 from cfa.models.student import SizePref
-from cfa.ui.results_table import SELECTIVITY
+from cfa.ui.results_table import NET_PRICE_BANDS, SELECTIVITY
 from cfa.ui.theme import named
 
 SIZE_LABELS = {
@@ -34,6 +34,11 @@ GROUPS: list[tuple[str, str, list[tuple[str, str]]]] = [
         ],
     ),
     ("control", "College type", [("Public", "Public"), ("Private", "Private")]),
+    (
+        "net_price",
+        "Average net price (after grants)",
+        [(label, label) for label, _lo, _hi in NET_PRICE_BANDS],
+    ),
     ("greek", "Greek life", [("Has Greek life", "Has fraternities/sororities"), ("No Greek life", "None")]),
     (
         "data_level",

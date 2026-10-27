@@ -87,7 +87,7 @@ class CollegeDetail(QDialog):
         left, right = QVBoxLayout(), QVBoxLayout()
         for group in ("General", "GPA", "Campus culture"):
             left.addWidget(self._group(group))
-        for group in ("Admissions", "Test scores"):
+        for group in ("Admissions", "Test scores", "Cost and aid"):
             right.addWidget(self._group(group))
         left.addStretch(1)
         right.addStretch(1)
@@ -121,7 +121,10 @@ class CollegeDetail(QDialog):
         w = QWidget()
         h = QHBoxLayout(w)
         h.setContentsMargins(0, 0, 0, 0)
-        val = QLabel(fmt_value(key, fv))
+        text = fmt_value(key, fv)
+        if key == "net_price_by_income" and fv.ok:
+            text = text.replace(": ", ":\u00a0").replace(" · ", "\n")  # one income bracket per line
+        val = QLabel(text)
         val.setWordWrap(True)
         val.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         h.addWidget(val)

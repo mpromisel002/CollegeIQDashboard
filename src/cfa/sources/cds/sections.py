@@ -902,6 +902,169 @@ def extract_b11(doc: Document, year: str | None) -> SectionResult:
     return SectionResult(Status.OK, {"grad_rate_6yr": _ok(round(v, 1), year)})
 
 
+# --------------------------------------------------------------------------- H2 / H2A (aid)
+
+# Line labels of the H2/H2A table, first-time full-time first-year column only.
+H2_ROWS = {
+    "a": r"number\s+of\s+degree[-\s]seeking\s+undergraduate\s+students",
+    "c": r"determined\s+to\s+have\s+financial\s+need",
+    "e": r"(?<!non-)(?<!non)\bneed[-\s]based\s+scholarship\s+or\s+grant\s+aid",
+    "i": r"percentage\s+of\s+need\s+that\s+was\s+met",
+    "j": r"average\s+financial\s+aid\s+package",
+    "k": r"average\s+need[-\s]based\s+scholarship\s+(?:and|or)\s+grant",
+    "n": r"who\s+had\s+no\s+financial\s+need",
+    "o": r"average\s+dollar\s+amount\s+of\s+institutional\s+non[-\s]need[-\s]based(?!\s+athletic)",
+}
+H2_KEYS = (
+    "need_grant_pct",
+    "need_met_pct",
+    "avg_aid_package",
+    "avg_need_grant",
+    "merit_aid_pct",
+    "avg_merit_award",
+)
+# A new line label ("F Number of students…", "N Number…") ends the search for a wrapped label's values.
+_LINE_LABEL = re.compile(r"^[A-Q]\s+[A-Z][a-z]")
+
+
+def _lettered(doc: Document, start: int, end: int) -> dict[str, list[Token]]:
+    """Values by H2/H2A line letter: the template puts "A".."Q" at the start of each value row."""
+    out: dict[str, list[Token]] = {}
+
+    def letter_of(r: Row) -> str | None:
+        t = r.tokens[0].text.strip().rstrip(".") if r.tokens else ""
+        return t if len(t) == 1 and "A" <= t <= "Q" else None
+
+    def trailing(r: Row, skip_first: bool) -> list[Token]:
+        # Values follow the label: only numbers after its last word ("Fall 2025 cohort" is text).
+        first = 1 if skip_first else 0
+        last_word = max(
+            (k for k, t in enumerate(r.tokens) if k >= first and _is_word_token(t)), default=first - 1
+        )
+        return [t for t in r.tokens[last_word + 1 :] if t.number is not None]
+
+    for j in range(start, end):
+        r = doc.rows[j]
+        letter = letter_of(r)
+        if letter is None or letter in out:
+            continue
+        nums = trailing(r, skip_first=True)
+        # A wrapped label can put the values on a following row, before the next line letter.
+        k = j + 1
+        while (
+            not nums and k < min(end, j + 5) and doc.rows[k].page == r.page and letter_of(doc.rows[k]) is None
+        ):
+            nums = trailing(doc.rows[k], skip_first=False)
+            k += 1
+        if nums:
+            out[letter] = nums
+    return out
+
+
+def _is_word_token(t: Token) -> bool:
+    return t.number is None and any(ch.isalpha() for ch in t.text)
+
+
+def _h2_values(doc: Document, idx: int, m: re.Match[str], min_x: float, max_rows: int = 8) -> list[Token]:
+    """Values for one H2 line found by its label: same row, the row above, or the wrapped label's
+    following rows."""
+    row = doc.rows[idx]
+    nums = [t for t in row.numbers_after(m.end()) if t.x0 >= min_x]
+    if nums or doc.fmt != "pdf":
+        return nums
+    prev = doc.rows[idx - 1] if idx > 0 else None
+    if prev is not None and prev.page == row.page and _numeric_row(prev) and abs(prev.top - row.top) <= 14:
+        nums = [t for t in prev.tokens if t.number is not None and t.x0 >= min_x]
+        if nums:
+            return nums
+    for j in range(idx + 1, min(len(doc.rows), idx + 1 + max_rows)):
+        r = doc.rows[j]
+        if r.page != row.page or _LINE_LABEL.match(r.text):
+            break
+        nums = [t for t in r.tokens if t.number is not None and t.x0 >= min_x]
+        if nums:
+            return nums
+    return []
+
+
+def extract_h2(doc: Document, year: str | None) -> SectionResult:
+    """H2/H2A for first-time, full-time first-years: need-based and merit (non-need) aid."""
+    start, end = window(doc, "H2", ("H3", "H4", "H5"), 160, lead=0)
+    if end == 0:
+        start, end = 0, len(doc.rows)
+    hits = {k: doc.find(re.compile(p, IC), start, end) for k, p in H2_ROWS.items()}
+    missing = {k: _nr(year) for k in H2_KEYS}
+    if hits["a"] is None:
+        return SectionResult(Status.NOT_REPORTED, missing, "H2 not found")
+    by_letter = _lettered(doc, max(start, hits["a"][0] - 2), end)
+    a_nums = by_letter.get("A") or _h2_values(doc, hits["a"][0], hits["a"][1], 0.0)
+    # The first-year column is the left-most value of line A; later lines must line up with it.
+    # Column spacing comes from line A, or from line B when the school filled only the first column of A.
+    ref = a_nums if len(a_nums) >= 2 else by_letter.get("B", [])
+    if (
+        not a_nums
+        or len(ref) < 2
+        or (a_nums[0].number or 0) <= 0
+        or (len(a_nums) >= 2 and (a_nums[0].number or 0) > (a_nums[1].number or 0))
+    ):
+        return SectionResult(Status.NOT_REPORTED, missing, "H2 first-year column not found")
+    col = a_nums[0]
+    cohort = a_nums[0].number or 0.0
+    tol = max(abs(ref[1].xc - ref[0].xc) * 0.4, 1.0)
+    if abs(ref[0].xc - col.xc) > tol:
+        return SectionResult(Status.NOT_REPORTED, missing, "H2 first-year column not found")
+
+    def first_year(key: str) -> Token | None:
+        nums = by_letter.get(key.upper(), [])
+        if not nums:
+            hit = hits[key]
+            if hit is None:
+                return None
+            nums = _h2_values(doc, hit[0], hit[1], col.x0 - tol)
+        near = [t for t in nums if abs(t.xc - col.xc) <= tol]
+        return near[0] if near else None
+
+    def dollars(key: str) -> FieldValue:
+        t = first_year(key)
+        if t is None:
+            return _nr(year)
+        v = t.number
+        return _ok(round(v), year) if v is not None and 100 <= v <= 150_000 else _fail(year, "Out of range")
+
+    def share(key: str) -> FieldValue:
+        t = first_year(key)
+        if t is None:
+            return _nr(year)
+        n = _int(t.number)
+        if n is None or n > cohort:
+            return _fail(year, "Count larger than the first-year class")
+        return _ok(round(100 * n / cohort, 1), year)
+
+    merit = share("n")
+    n_tok, c_tok = first_year("n"), first_year("c")
+    no_need = cohort - c_tok.number if c_tok is not None and c_tok.number is not None else None
+    if merit.ok and n_tok is not None and no_need is not None and (n_tok.number or 0) > no_need:
+        merit = _fail(year, "More no-need merit recipients than students without need (line N vs A-C)")
+    merit_award = (
+        dollars("o") if merit.ok or merit.status is Status.NOT_REPORTED else _fail(year, "Line N failed")
+    )
+    out = {
+        "need_grant_pct": share("e"),
+        "need_met_pct": _nr(year),
+        "avg_aid_package": dollars("j"),
+        "avg_need_grant": dollars("k"),
+        "merit_aid_pct": merit,
+        "avg_merit_award": merit_award,
+    }
+    t = first_year("i")
+    if t is not None:
+        v = as_percent(t, doc, allow_fraction=doc.fmt == "xlsx")
+        out["need_met_pct"] = _ok(round(v, 1), year) if v is not None else _fail(year, "Out of range")
+    ok = [fv.ok for fv in out.values()]
+    status = Status.OK if all(ok) else (Status.PARTIAL if any(ok) else Status.NOT_REPORTED)
+    return SectionResult(status, out)
+
+
 EXTRACTORS: dict[str, Callable[[Document, str | None], SectionResult]] = {
     "C1": extract_c1,
     "C7": extract_c7,
@@ -915,6 +1078,7 @@ EXTRACTORS: dict[str, Callable[[Document, str | None], SectionResult]] = {
     "F1": extract_f1,
     "B22": extract_b22,
     "B11": extract_b11,
+    "H2": extract_h2,
 }
 
 

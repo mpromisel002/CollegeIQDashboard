@@ -70,6 +70,14 @@ Scorecard does not expose a data year for `latest.*`; badges show "latest".
 For many schools, `ScorecardAdapter.prefetch()` sends `id=<up to 100 comma-separated UnitIDs>&per_page=100`
 (one request per 100 schools; api.data.gov keys allow 1,000 requests an hour).
 
+Cost fields (all `latest.*`): `cost.tuition.in_state`, `cost.tuition.out_of_state`,
+`cost.attendance.academic_year`, `cost.avg_net_price.overall`, `cost.net_price.{public|private}.
+by_income_level.{0-30000|30001-48000|48001-75000|75001-110000|110001-plus}` (public and private
+schools use separate fields; whichever is filled is used), `aid.pell_grant_rate`,
+`aid.median_debt.completers.overall`. IPEDS `academic-year-tuition` (undergraduate, tuition types
+3 = in-state and 4 = out-of-state; newest year 2023 at the time of writing) is the tuition fallback.
+IPEDS's grant-aid tables stop at 2021 in the Urban API, so they are not used.
+
 ## 3. Common Data Set (each school's own PDF/XLSX)
 
 Documents are listed in `registry/schools.yaml` (mirrored to the public
@@ -105,6 +113,15 @@ Three layouts exist in the wild, and all three are handled by the same label-anc
 | F1 | "Percent of {men\|males} who join fraternities", "Percent of {women\|females} who join sororities", "Percent who live in college-owned, -operated, or -affiliated housing" | **Undergraduates** column only |
 | B22 | retention percentage | |
 | B10-B11 | "Six-year graduation rate for {year} cohort" (Total column, most recent cohort) | |
+
+### H2 / H2A (financial aid)
+
+Lines are found by their template letter (A–Q at the start of the value row; values may sit on the
+next row when a label wraps), falling back to the label text. Only the first-time, full-time
+first-year column is used; it is the left-most value of line A, and other lines must line up with
+it. Shares are computed from counts (E/A for need-based grants, N/A for merit aid). N is rejected
+when it exceeds A − C (students without need), which catches schools that copied line A into N.
+The PDF page pre-scan keeps part H's own pages; schools whose CDS has no part H show "Not reported".
 
 ### Sanity checks (values that fail are `PARSE_FAILED`, never shown)
 

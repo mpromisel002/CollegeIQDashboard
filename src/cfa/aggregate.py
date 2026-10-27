@@ -59,6 +59,23 @@ PRIORITY: dict[str, tuple[str, ...]] = {
     "retention_rate": (CDS, URBAN, SCORECARD),
     "grad_rate_6yr": (CDS, URBAN, SCORECARD),
     "admission_factors": (CDS,),
+    "tuition_in_state": (SCORECARD, URBAN),
+    "tuition_out_state": (SCORECARD, URBAN),
+    **{
+        k: (SCORECARD,)
+        for k in ("cost_attendance", "net_price_avg", "net_price_by_income", "pell_rate", "median_debt")
+    },
+    **{
+        k: (CDS,)
+        for k in (
+            "need_grant_pct",
+            "need_met_pct",
+            "avg_aid_package",
+            "avg_need_grant",
+            "merit_aid_pct",
+            "avg_merit_award",
+        )
+    },
 }
 
 GROUPS: tuple[tuple[str, ...], ...] = (
