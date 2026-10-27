@@ -104,4 +104,4 @@ def test_pdf_page_prescan_is_safe_across_threads():
     with ThreadPoolExecutor(max_workers=8) as pool:
         ranges = list(pool.map(lambda d: needed_pages(d, 200), docs * 8))
     assert all(len(r) > 0 for r in ranges)
-    assert len({(r.start, r.stop) for r in ranges}) == 3  # each document gives the same answer every time
+    assert len({tuple(r) for r in ranges}) == 3  # each document gives the same answer every time

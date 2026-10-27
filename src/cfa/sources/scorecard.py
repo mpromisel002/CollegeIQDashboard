@@ -40,7 +40,27 @@ FIELD_MAP: dict[str, str] = {
     "latest.admissions.test_requirements": "test_policy",
     "latest.student.retention_rate.four_year.full_time": "retention_rate",
     "latest.completion.completion_rate_4yr_150nt": "grad_rate_6yr",
+    "latest.cost.tuition.in_state": "tuition_in_state",
+    "latest.cost.tuition.out_of_state": "tuition_out_state",
+    "latest.cost.attendance.academic_year": "cost_attendance",
+    "latest.cost.avg_net_price.overall": "net_price_avg",
+    "latest.aid.pell_grant_rate": "pell_rate",
+    "latest.aid.median_debt.completers.overall": "median_debt",
 }
+
+# Net price by family income: Scorecard keeps public and private schools in separate fields.
+INCOME_FIELDS: dict[str, str] = {
+    "$0–30k": "0-30000",
+    "$30–48k": "30001-48000",
+    "$48–75k": "48001-75000",
+    "$75–110k": "75001-110000",
+    "$110k+": "110001-plus",
+}
+NET_PRICE_FIELDS = [
+    f"latest.cost.net_price.{ctl}.by_income_level.{band}"
+    for ctl in ("public", "private")
+    for band in INCOME_FIELDS.values()
+]
 
 
 class _Envelope(BaseModel):
@@ -76,6 +96,22 @@ def _zip(v: Any) -> str | None:
     return t.split("-")[0] if t else None
 
 
+def _money(v: Any) -> int | None:
+    n = sentinels.scorecard_num(v)
+    return round(n) if n is not None and 0 <= n <= 200_000 else None
+
+
+def _net_price_by_income(row: dict[str, Any]) -> dict[str, int] | None:
+    out: dict[str, int] = {}
+    for label, band in INCOME_FIELDS.items():
+        for ctl in ("public", "private"):
+            v = _money(row.get(f"latest.cost.net_price.{ctl}.by_income_level.{band}"))
+            if v is not None:
+                out[label] = v
+                break
+    return out or None
+
+
 def _policy(v: Any) -> str | None:
     n = sentinels.scorecard_num(v)
     return SCORECARD_TEST_POLICY.get(int(n)) if n is not None else None
@@ -98,6 +134,12 @@ CONVERTERS: dict[str, Callable[[Any], Any]] = {
     "test_policy": _policy,
     "retention_rate": _rate,
     "grad_rate_6yr": _rate,
+    "tuition_in_state": _money,
+    "tuition_out_state": _money,
+    "cost_attendance": _money,
+    "net_price_avg": _money,
+    "pell_rate": _rate,
+    "median_debt": _money,
 }
 
 
@@ -112,6 +154,7 @@ def parse_school(row: dict[str, Any]) -> dict[str, FieldValue]:
             out["setting"] = FieldValue.of(setting, SOURCE, YEAR)
             continue
         out[key] = FieldValue.of(CONVERTERS[key](raw), SOURCE, YEAR)
+    out["net_price_by_income"] = FieldValue.of(_net_price_by_income(row), SOURCE, YEAR)
     return out
 
 
@@ -132,7 +175,7 @@ class ScorecardAdapter:
         self._bulk: dict[int, FetchResult] = {}  # filled by prefetch(), for this run only
 
     def _all_missing(self, status: Status, note: str) -> dict[str, FieldValue]:
-        keys = [*FIELD_MAP.values(), "setting"]
+        keys = [*FIELD_MAP.values(), "setting", "net_price_by_income"]
         return {k: FieldValue.missing(SOURCE, status, note) for k in keys}
 
     async def fetch(self, unitid: int) -> FetchResult:
@@ -145,7 +188,11 @@ class ScorecardAdapter:
         if cached is not None:
             return cached
         start = time.monotonic()
-        params = {"id": unitid, "fields": ",".join(["id", *FIELD_MAP]), "api_key": self.api_key}
+        params = {
+            "id": unitid,
+            "fields": ",".join(["id", *FIELD_MAP, *NET_PRICE_FIELDS]),
+            "api_key": self.api_key,
+        }
         res = await self.http.get(self.base_url, params=params)
         if not res.ok:
             return FetchResult(
@@ -180,7 +227,7 @@ class ScorecardAdapter:
             start = time.monotonic()
             params = {
                 "id": ",".join(str(u) for u in chunk),
-                "fields": ",".join(["id", *FIELD_MAP]),
+                "fields": ",".join(["id", *FIELD_MAP, *NET_PRICE_FIELDS]),
                 "per_page": PER_PAGE,
                 "api_key": self.api_key,
             }

@@ -16,6 +16,7 @@ class Kind(StrEnum):
     SCORE = "score"
     BOOL = "bool"
     MAP = "map"  # dict value (GPA distribution, admission factors)
+    MONEY = "money"  # whole US dollars
 
 
 @dataclass(frozen=True)
@@ -82,7 +83,26 @@ _SPECS: list[FieldSpec] = [
     FieldSpec("retention_rate", "First-year retention", "Campus culture", Kind.PERCENT),
     FieldSpec("grad_rate_6yr", "6-year graduation rate", "Campus culture", Kind.PERCENT),
     FieldSpec("admission_factors", "Admission factor importance", "Selectivity", Kind.MAP),
+    # Cost: College Scorecard (IPEDS tuition as fallback); aid: CDS H2/H2A, first-time first-years.
+    FieldSpec("tuition_in_state", "Tuition and fees, in-state", "Cost and aid", Kind.MONEY),
+    FieldSpec("tuition_out_state", "Tuition and fees, out-of-state", "Cost and aid", Kind.MONEY),
+    FieldSpec("cost_attendance", "Total cost of attendance (one year)", "Cost and aid", Kind.MONEY),
+    FieldSpec("net_price_avg", "Average net price (after grants)", "Cost and aid", Kind.MONEY),
+    FieldSpec("net_price_by_income", "Average net price by family income", "Cost and aid", Kind.MAP),
+    FieldSpec("pell_rate", "Undergraduates with a Pell grant", "Cost and aid", Kind.PERCENT),
+    FieldSpec("median_debt", "Median federal debt at graduation", "Cost and aid", Kind.MONEY),
+    FieldSpec("need_grant_pct", "First-years given a need-based grant", "Cost and aid", Kind.PERCENT),
+    FieldSpec("avg_need_grant", "Average need-based grant", "Cost and aid", Kind.MONEY),
+    FieldSpec("need_met_pct", "Average share of need met", "Cost and aid", Kind.PERCENT),
+    FieldSpec("avg_aid_package", "Average aid package", "Cost and aid", Kind.MONEY),
+    FieldSpec(
+        "merit_aid_pct", "First-years with no need given a merit scholarship", "Cost and aid", Kind.PERCENT
+    ),
+    FieldSpec("avg_merit_award", "Average merit scholarship", "Cost and aid", Kind.MONEY),
 ]
+
+# Scorecard's net-price income brackets, in display order.
+INCOME_BRACKETS: tuple[str, ...] = ("$0–30k", "$30–48k", "$48–75k", "$75–110k", "$110k+")
 
 FIELDS: dict[str, FieldSpec] = {s.key: s for s in _SPECS}
 

@@ -24,8 +24,9 @@ COLUMNS = [
     "Greek %",
     "Setting",
     "Undergrads",
+    "Net price",
 ]
-COL_NAME, COL_TIER, COL_CULTURE, COL_RATE, COL_SIZE = 0, 3, 4, 5, 9
+COL_NAME, COL_TIER, COL_CULTURE, COL_RATE, COL_SIZE, COL_NET = 0, 3, 4, 5, 9, 10
 TIER_ORDER = {SAFETY: 0, TARGET: 1, REACH: 2}
 SORT_ROLE = Qt.ItemDataRole.UserRole + 1
 
@@ -36,6 +37,21 @@ SELECTIVITY = [
     ("Moderately selective", 40.0, 70.0),
     ("Less selective", 70.0, 100.01),
 ]
+
+
+# Average net price bands offered as a filter.
+NET_PRICE_BANDS = [
+    ("Under $15,000", 0, 15_000),
+    ("$15,000–$25,000", 15_000, 25_000),
+    ("$25,000–$40,000", 25_000, 40_000),
+    ("$40,000 or more", 40_000, 10**9),
+]
+
+
+def net_price_band(v: float | None) -> str | None:
+    if v is None:
+        return None
+    return next((label for label, lo, hi in NET_PRICE_BANDS if lo <= v < hi), None)
 
 
 def selectivity(rate: float | None) -> str | None:
@@ -123,6 +139,15 @@ class ResultsModel(QAbstractTableModel):
         if col == 8:
             setting = r.value("setting")
             return str(setting or "—"), str(setting or "~"), str(r.value("locale") or "")
+        if col == COL_NET:
+            fv = r.get("net_price_avg")
+            return (
+                fmt_value("net_price_avg", fv) if fv.ok else "—",
+                (fv.value if fv.ok else 10**9),
+                "Average yearly cost after grants (College Scorecard)"
+                if fv.ok
+                else fmt_value("net_price_avg", fv),
+            )
         n = r.num("undergrad_size")
         return (
             ("—" if n is None else f"{int(n):,}"),
@@ -162,6 +187,7 @@ class ResultsFilter(QSortFilterProxyModel):
         self.control: set[str] = set()
         self.greek: set[str] = set()  # "Has Greek life" / "No Greek life"
         self.data_level: set[str] = set()  # "Full" (has a Common Data Set) / "Federal"
+        self.net_price: set[str] = set()  # NET_PRICE_BANDS labels
 
     def set_filters(self, **kw: set[str]) -> None:
         if hasattr(self, "beginFilterChange"):  # Qt >= 6.9
@@ -199,6 +225,8 @@ class ResultsFilter(QSortFilterProxyModel):
             kind = "Public" if ctl == "Public" else "Private" if ctl.startswith("Private") else ""
             if kind not in self.control:
                 return False
+        if self.net_price and net_price_band(r.num("net_price_avg")) not in self.net_price:
+            return False
         if self.data_level and ("Full" if r.links.get("cds") else "Federal") not in self.data_level:
             return False
         if self.greek:

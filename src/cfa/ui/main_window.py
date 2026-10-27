@@ -44,7 +44,16 @@ from cfa.ui.college_detail import CollegeDetail
 from cfa.ui.filter_panel import FilterPanel
 from cfa.ui.format import fmt_value
 from cfa.ui.results_cards import ResultCards
-from cfa.ui.results_table import COL_CULTURE, COL_NAME, COL_RATE, COL_SIZE, COL_TIER, ResultRow, ResultsTable
+from cfa.ui.results_table import (
+    COL_CULTURE,
+    COL_NAME,
+    COL_NET,
+    COL_RATE,
+    COL_SIZE,
+    COL_TIER,
+    ResultRow,
+    ResultsTable,
+)
 from cfa.ui.student_panel import StudentPanel
 from cfa.ui.theme import named
 from cfa.ui.workers import Worker
@@ -58,6 +67,7 @@ SORTS: dict[str, tuple[int, Qt.SortOrder]] = {
     "Acceptance rate (lowest first)": (COL_RATE, Qt.SortOrder.AscendingOrder),
     "Acceptance rate (highest first)": (COL_RATE, Qt.SortOrder.DescendingOrder),
     "Enrollment (largest first)": (COL_SIZE, Qt.SortOrder.DescendingOrder),
+    "Net price (lowest first)": (COL_NET, Qt.SortOrder.AscendingOrder),
     "Name (A–Z)": (COL_NAME, Qt.SortOrder.AscendingOrder),
 }
 
@@ -518,6 +528,19 @@ class MainWindow(QMainWindow):
         "housing_pct",
         "setting",
         "undergrad_size",
+        "tuition_in_state",
+        "tuition_out_state",
+        "cost_attendance",
+        "net_price_avg",
+        "net_price_by_income",
+        "pell_rate",
+        "median_debt",
+        "need_grant_pct",
+        "avg_need_grant",
+        "need_met_pct",
+        "avg_aid_package",
+        "merit_aid_pct",
+        "avg_merit_award",
     ]
 
     def export_csv(self) -> None:

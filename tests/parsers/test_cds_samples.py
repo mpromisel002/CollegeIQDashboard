@@ -177,3 +177,36 @@ def test_every_sample_has_no_parse_crash():
     for name in EXPECTED:
         _, sections = parsed(name)
         assert set(sections) >= {"C1", "C7", "C8", "C9", "C11", "C12", "C21", "C22", "E1", "F1", "B22", "B11"}
+
+
+# H2/H2A (first-time, full-time first-years), checked by hand against each document.
+H2_EXPECTED = {
+    "alabama_2025-26.pdf": {  # A 7,973; E 3,433; N 3,206
+        "need_grant_pct": 43.1,
+        "need_met_pct": 62.7,
+        "avg_aid_package": 19857,
+        "avg_need_grant": 17406,
+        "merit_aid_pct": 40.2,
+        "avg_merit_award": 16895,
+    },
+    "purdue_2025-26.xlsx": {  # A 11,339; E 2,742; I 65.2718%; N 2,358
+        "need_grant_pct": 24.2,
+        "need_met_pct": 65.3,
+        "avg_aid_package": 14569,
+        "avg_need_grant": 13698,
+        "merit_aid_pct": 20.8,
+        "avg_merit_award": 5789,
+    },
+}
+
+
+@pytest.mark.parametrize(
+    "name,key,expected", [(f, k, v) for f, e in H2_EXPECTED.items() for k, v in e.items()]
+)
+def test_h2_aid_values(name, key, expected):
+    assert val(name, key) == expected
+
+
+def test_h2_absent_section_is_not_reported():
+    _, sections = parsed("montana_2025-26.pdf")  # Montana's CDS has no part H
+    assert sections["H2"].status is Status.NOT_REPORTED

@@ -206,6 +206,28 @@ def _parse_grad(rows: list[dict[str, Any]], year: str) -> dict[str, FieldValue]:
     return {"grad_rate_6yr": FieldValue.missing(SOURCE, year=year)}
 
 
+class _Tuition(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    level_of_study: int | None = None
+    tuition_type: int | None = None
+    tuition_fees_ft: float | None = None
+
+
+# IPEDS academic-year tuition: undergraduate (level 1), in-state (3) and out-of-state (4).
+TUITION_TYPES = {3: "tuition_in_state", 4: "tuition_out_state"}
+
+
+def _parse_tuition(rows: list[dict[str, Any]], year: str) -> dict[str, FieldValue]:
+    out: dict[str, FieldValue] = {}
+    for r in rows:
+        m = _Tuition.model_validate(_clean_row(r))
+        key = TUITION_TYPES.get(m.tuition_type or 0)
+        v = m.tuition_fees_ft
+        if m.level_of_study == 1 and key and v is not None and 0 <= v <= 200_000:
+            out[key] = _fv(round(v), year)
+    return out
+
+
 def _parse_headcount(rows: list[dict[str, Any]], year: str) -> dict[str, FieldValue]:
     for r in rows:
         m = _Headcount.model_validate(_clean_row(r))
@@ -257,6 +279,11 @@ TOPICS: dict[str, tuple[str, Parser, tuple[str, ...]]] = {
     ),
     "fall-retention": ("fall-retention/{year}/", _parse_retention, ("retention_rate",)),
     "grad-rates": ("grad-rates/{year}/", _parse_grad, ("grad_rate_6yr",)),
+    "academic-year-tuition": (
+        "academic-year-tuition/{year}/",
+        _parse_tuition,
+        ("tuition_in_state", "tuition_out_state"),
+    ),
     "enrollment-headcount": (
         "enrollment-headcount/{year}/undergraduate/",
         _parse_headcount,
@@ -289,6 +316,7 @@ def _parse_topic(topic: str, rows: list[dict[str, Any]], year: str) -> TopicResu
 
 # Server-side filters for bulk (many-school) requests: only the rows the parsers use.
 BULK_FILTERS: dict[str, str] = {
+    "academic-year-tuition": "level_of_study=1",
     "grad-rates": "subcohort=2&race=99&sex=99",
     "enrollment-headcount": "race=99&sex=99",
 }

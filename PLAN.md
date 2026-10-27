@@ -363,3 +363,9 @@ A per-school free-text and tags field (e.g., "political lean: left-leaning per c
   looks only on each college's own website (robots.txt respected) and keeps a document only if it
   passes the same check as `validate_registry`. CDS PDFs are pre-scanned with pdfium so only parts
   B–F are laid out (about twice as fast, identical results on all registry documents).
+- v1.6 (2026-10-27): **cost and scholarships.** College Scorecard adds tuition, cost of attendance,
+  net price (average and by family income), Pell share and median debt; IPEDS tuition is the
+  fallback without a key. Scholarship data comes from CDS H2/H2A (need-based grants, need met, and
+  merit aid for students without need) because Scorecard has none and IPEDS grant data in the Urban
+  API ends in 2021. Shown on cards, in a "Cost and aid" detail section, as a net-price sort and filter,
+  and in CSV export.

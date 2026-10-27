@@ -3,6 +3,7 @@ import asyncio
 import httpx
 import pytest
 import respx
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QLabel, QPushButton
 
 from cfa.models.field_value import FieldValue, Status
@@ -306,3 +307,61 @@ def test_window_shows_results_before_full_data_and_updates_in_place(qtbot, monke
     qtbot.waitUntil(lambda: w.worker is None, timeout=5000)
     alpha = next(c for c in w.cards.cards if c.row.record.name == "Alpha U")
     assert "Full data" in [b.text() for b in badges(alpha.row)]
+
+
+def test_cards_show_cost_and_merit_aid(qtbot):
+    from cfa.ui.results_cards import stats
+
+    profile = StudentProfile()
+    public = make_record(
+        1,
+        "Public U",
+        tuition_in_state=12484,
+        tuition_out_state=35342,
+        net_price_avg=20202,
+        merit_aid_pct=40.2,
+        avg_merit_award=16895,
+        need_met_pct=62.7,
+    )
+    private = make_record(2, "Private C", tuition_in_state=70576, tuition_out_state=70576)
+    got = {
+        label: value
+        for label, value, _tip in stats(
+            ResultRow(public, academic.classify(profile, public), culture.score(profile, public))
+        )
+    }
+    assert got["Tuition & fees"] == "$12,484 / $35,342"
+    assert got["Average net price"] == "$20,202"
+    assert got["Merit scholarships"] == "40% · avg $16,895"
+    assert got["Need met (average)"] == "62.7%"
+    got = {
+        label: value
+        for label, value, _tip in stats(
+            ResultRow(private, academic.classify(profile, private), culture.score(profile, private))
+        )
+    }
+    assert (
+        got["Tuition & fees"] == "$70,576"
+        and got["Average net price"] == "—"
+        and got["Merit scholarships"] == "—"
+    )
+
+
+def test_net_price_filter_and_sort(qtbot):
+    from cfa.ui.results_table import COL_NET, ResultsTable
+
+    table = ResultsTable()
+    qtbot.addWidget(table)
+    profile = StudentProfile()
+    recs = [
+        make_record(1, "Cheap", net_price_avg=12000),
+        make_record(2, "Mid", net_price_avg=30000),
+        make_record(3, "Unknown"),
+    ]
+    table.results_model.set_rows(
+        [ResultRow(r, academic.classify(profile, r), culture.score(profile, r)) for r in recs]
+    )
+    table.sortByColumn(COL_NET, Qt.SortOrder.AscendingOrder)
+    assert [r.record.name for r in table.visible_rows()] == ["Cheap", "Mid", "Unknown"]
+    table.proxy.set_filters(net_price={"$25,000–$40,000"})
+    assert [r.record.name for r in table.visible_rows()] == ["Mid"]

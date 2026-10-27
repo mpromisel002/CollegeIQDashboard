@@ -21,6 +21,12 @@ from cfa.sources.registry import Registry
 log = logging.getLogger(__name__)
 
 CDS_KEYS = (
+    "need_grant_pct",
+    "need_met_pct",
+    "avg_aid_package",
+    "avg_need_grant",
+    "merit_aid_pct",
+    "avg_merit_award",
     "applicants_total",
     "applicants_men",
     "applicants_women",
