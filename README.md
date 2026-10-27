@@ -1,12 +1,22 @@
 # College Fit Advisor
 
-A Windows desktop app for college advisors. Enter a student's profile and get every school in the
-registry ranked two ways:
+A Windows desktop app for college advisors. Enter a student's profile and search every four-year
+college in the U.S. (about 1,700 public and private nonprofit schools) or just the student's states.
+Each school is ranked two ways:
 
 - **Academic fit** — Safety / Target / Reach from the admit rate, the school's GPA distribution and its
   SAT/ACT middle 50 %, with the reasoning shown.
 - **Culture fit** — Greek life, setting, size, housing, athletics, region and study abroad, weighted by
   what the student cares about.
+
+Each result also shows **cost and aid**: tuition and fees, average net price (overall and by family
+income), and, where the school publishes it, how often it gives **merit scholarships** and the average
+award. Results come as cards or a sortable table, with filters (fit, size, setting, selectivity,
+net price, …) and CSV/PDF export.
+
+Every college gets federal data. The **333 colleges on the curated list** also get their Common Data
+Set, which adds the GPA distribution, early decision/action numbers, Greek life and scholarship
+figures.
 
 ![screenshot](docs/screenshot.png)
 
@@ -16,10 +26,11 @@ memory for the session only:
 | Source | Used for |
 |---|---|
 | IPEDS via the [Urban Institute Education Data Portal](https://educationdata.urban.org/) | directory, setting, admissions counts, test ranges, retention, graduation, athletics |
-| [College Scorecard](https://collegescorecard.ed.gov/data/documentation/) (free API key) | undergraduate size and fallbacks |
-| Each school's own **Common Data Set** (PDF/XLSX on its `.edu` site) | GPA distribution, ED/EA, Greek life, housing, admission factors, test policy |
+| [College Scorecard](https://collegescorecard.ed.gov/data/documentation/) (free API key) | undergraduate size, tuition and fees, cost of attendance, net price by income, Pell share, median debt |
+| Each school's own **Common Data Set** (PDF/XLSX on its `.edu` site) | GPA distribution, ED/EA, Greek life, housing, admission factors, test policy, need-based and merit aid (H2/H2A) |
 
-Niche, Peterson's, BigFuture and College Transitions are **link-outs only** (their terms forbid
+Without a Scorecard key the app still works; tuition then comes from IPEDS and net price is not
+shown. Niche, Peterson's, BigFuture and College Transitions are **link-outs only** (their terms forbid
 automated collection). Details: [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md).
 
 ## Install (Windows)
@@ -40,6 +51,7 @@ python -m cfa --self-test                            # load registry, ping sourc
 pytest                                               # offline: recorded fixtures only
 ruff check src tests && mypy src
 python -m cfa.tools.validate_registry                # check every registry link + parse
+python -m cfa.tools.find_cds list --states PA --out todo.json   # propose new registry entries
 python -m cfa.tools.live_smoke --baseline docs/coverage_baseline.json   # real sources
 pyinstaller packaging/cfa.spec --noconfirm           # build dist/CollegeFitAdvisor/
 ```
@@ -54,10 +66,10 @@ Set `CFA_SCORECARD_API_KEY` in the environment, or save the key in the app's **S
 src/cfa/            app.py, config.py, pipeline.py, aggregate.py, cache.py
   models/           FieldValue, CollegeRecord, StudentProfile
   sources/          http client, Urban/IPEDS, Scorecard, registry loader
-  sources/cds/      fetch, PDF/XLSX → layout rows, section extractors (C1 … F1, B22)
+  sources/cds/      fetch, PDF/XLSX → layout rows, section extractors (B22, C1 … F1, H2)
   scoring/          academic (tiers), culture (0-100)
   ui/               PySide6 window, results table, detail view, charts, settings
-  tools/            validate_registry, live_smoke
+  tools/            validate_registry, live_smoke, find_cds (finds CDS files on a college's own site)
 registry/schools.yaml   pointers only (UnitIDs + CDS URLs); mirrored to the public
                         mpromisel002-CollegeIQDashboard-registry repo the app reads (see docs/ADDING_SCHOOLS.md)
 tests/              unit, adapters (respx), parsers (real CDS samples), ui (pytest-qt)
