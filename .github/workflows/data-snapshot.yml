@@ -1,0 +1,97 @@
+name: Weekly data file
+
+# Builds the file the app searches from (src/cfa/snapshot.py): IPEDS and College Scorecard for every
+# four-year college, plus every curated school's Common Data Set, read the same way a live search
+# reads them. Published to the "data" branch of the public registry repo, which the app downloads
+# at startup:
+#   https://github.com/mpromisel002/mpromisel002-CollegeIQDashboard-registry/tree/data
+# Needs the repository secrets SCORECARD_API_KEY and REGISTRY_SYNC_TOKEN (see registry-sync.yml).
+# If a run fails, the previous file stays published; the app stops using a file older than
+# SNAPSHOT_MAX_AGE_DAYS (config.py) and falls back to live data.
+on:
+  schedule:
+    - cron: "41 6 * * 0"  # Sundays 06:41 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: data-snapshot
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      PUBLIC_REPO: mpromisel002/mpromisel002-CollegeIQDashboard-registry
+      CFA_SCORECARD_API_KEY: ${{ secrets.SCORECARD_API_KEY }}
+      HAS_TOKEN: ${{ secrets.REGISTRY_SYNC_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - run: pip install -r requirements.txt
+      - name: Build the data file
+        env:
+          PYTHONPATH: src
+        run: |
+          set -o pipefail
+          python -m cfa.tools.build_snapshot --out snapshot.json.gz --require-scorecard --min-schools 1200 \
+            2>&1 | tee build.log
+      - name: Missing token
+        if: env.HAS_TOKEN != 'true'
+        run: |
+          echo "::error::REGISTRY_SYNC_TOKEN is not set; the data file was built but not published."
+          exit 1
+      - name: Publish to the public registry repo
+        if: env.HAS_TOKEN == 'true'
+        env:
+          TOKEN: ${{ secrets.REGISTRY_SYNC_TOKEN }}
+        run: |
+          TOKEN="$(printf '%s' "$TOKEN" | tr -d '[:space:]')"
+          mkdir public && cp snapshot.json.gz public/
+          cat > public/README.md <<'MD'
+          # College Fit Advisor — weekly data file
+
+          `snapshot.json.gz` is read by the College Fit Advisor desktop app at startup so searches take
+          seconds. It is rebuilt every week from the official sources the app otherwise reads live:
+          IPEDS (Urban Institute Education Data Portal), the U.S. Department of Education College
+          Scorecard, and each listed school's own Common Data Set. Each value keeps its source and year.
+
+          This branch is replaced on every build and holds one commit. Do not edit it.
+          MD
+          sed -i 's/^          //' public/README.md
+          cd public
+          git init -q -b data
+          git config user.name "data-snapshot[bot]"
+          git config user.email "data-snapshot@users.noreply.github.com"
+          git add snapshot.json.gz README.md
+          git commit -q -m "Weekly data file from ${GITHUB_REPOSITORY}@${GITHUB_SHA::7}"
+          git remote add origin "https://x-access-token:${TOKEN}@github.com/${PUBLIC_REPO}.git"
+          # Only this branch is replaced (one commit, no growing history); main is untouched.
+          git push -q --force origin data:data || {
+            echo "::error::REGISTRY_SYNC_TOKEN may not write to ${PUBLIC_REPO} (see registry-sync.yml for the permissions it needs)."
+            exit 1
+          }
+          echo "Published https://github.com/${PUBLIC_REPO}/tree/data"
+      - name: Open an issue on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const log = fs.existsSync('build.log') ? fs.readFileSync('build.log', 'utf8').slice(-6000) : '(no output)';
+            const run = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Weekly data file failed (${new Date().toISOString().slice(0, 10)})`,
+              body: `The app keeps using last week's file until it is 30 days old, then falls back to live data.\n\nRun: ${run}\n\n` +
+                    "```\n" + log + "\n```",
+            });

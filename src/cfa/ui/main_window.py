@@ -38,6 +38,7 @@ from cfa.models.field_value import Status
 from cfa.models.student import StudentProfile
 from cfa.pipeline import RunResult, parse_pool, run_all, run_search
 from cfa.scoring import academic, culture
+from cfa.snapshot import Snapshot, SnapshotLoad, load_snapshot
 from cfa.sources.http import HttpClient
 from cfa.sources.registry import Registry, RegistryLoad, load_bundled, load_registry
 from cfa.ui.college_detail import CollegeDetail
@@ -79,6 +80,9 @@ class MainWindow(QMainWindow):
         self.resize(1360, 860)
         self.pool = QThreadPool.globalInstance()
         self.registry: Registry = Registry(schema_version=1, schools=[])
+        self.registry_origin = ""
+        # The weekly data file: searches answer from it in seconds; None = live sources only.
+        self.snapshot: Snapshot | None = None
         self.records: list[CollegeRecord] = []
         self.worker: Worker | None = None
         self._pending_updates: dict[int, CollegeRecord] = {}
@@ -197,6 +201,8 @@ class MainWindow(QMainWindow):
         self.statusBar().addPermanentWidget(self.health_label)
         self.apply_filters()
         self._load_registry(remote=load_remote_registry)
+        if load_remote_registry:
+            self._load_snapshot()
 
     # ----------------------------------------------------------------- header bar (replaces the menu bar)
     def _header(self) -> QFrame:
@@ -243,9 +249,11 @@ class MainWindow(QMainWindow):
         QMessageBox.about(
             self,
             "About College Fit Advisor",
-            f"College Fit Advisor {__version__}<br><br>College data is fetched live from IPEDS "
+            f"College Fit Advisor {__version__}<br><br>College data comes from IPEDS "
             "(Urban Institute Education Data Portal), the U.S. Dept. of Education College "
-            "Scorecard, and each school's own Common Data Set. Nothing is stored on disk.<br><br>"
+            "Scorecard, and each school's own Common Data Set, through a weekly data file built "
+            "from those sources (or live, when the file is unavailable). Nothing is stored on "
+            "disk.<br><br>"
             f"<a href='{config.REPO_URL}'>{config.REPO_URL}</a>",
         )
 
@@ -280,10 +288,37 @@ class MainWindow(QMainWindow):
     def set_registry(self, load: RegistryLoad) -> None:
         self.registry = load.registry
         self.show_banner(load.warning)
-        origin = {"remote": "online", "bundled": "built-in copy", "empty": "unavailable"}[load.origin]
-        self.registry_label.setText(
-            f"Curated list: {len(self.registry.schools)} schools with full data ({origin})"
+        self.registry_origin = {"remote": "online", "bundled": "built-in copy", "empty": "unavailable"}[
+            load.origin
+        ]
+        self._update_header()
+
+    def _load_snapshot(self) -> None:
+        async def go() -> SnapshotLoad:
+            async with HttpClient(max_retries=1) as http:
+                return await load_snapshot(http)
+
+        w = Worker(lambda p, c: asyncio.run(go()))
+        w.signals.finished.connect(self.set_snapshot)
+        w.signals.failed.connect(lambda m: log.warning("Weekly data file not loaded: %s", m))
+        self.pool.start(w)
+
+    def set_snapshot(self, load: SnapshotLoad) -> None:
+        self.snapshot = load.snapshot
+        self._update_header()
+        self.registry_label.setToolTip(
+            "Searches use the weekly data file, built from the same official sources; "
+            "View details → Refresh live reads a school again from the sources."
+            if self.snapshot
+            else load.note
         )
+
+    def _update_header(self) -> None:
+        text = f"Curated list: {len(self.registry.schools)} schools with full data ({self.registry_origin})"
+        if self.snapshot is not None:
+            built = self.snapshot.built_at.astimezone()
+            text += f" · Data as of {built:%b} {built.day}"
+        self.registry_label.setText(text)
 
     # ----------------------------------------------------------------- profiles
     def save_profile(self) -> None:
@@ -315,6 +350,7 @@ class MainWindow(QMainWindow):
             self.show_toast("The school list has not loaded yet.")
             return
         registry, key = self.registry, config.scorecard_api_key()
+        snapshot = self.snapshot if unitids is None else None  # retrying a school reads it live
         states, only = self.student.preferred_states()
         search_all = unitids is None and self.student.search_all()
 
@@ -330,6 +366,7 @@ class MainWindow(QMainWindow):
                         progress=progress,
                         cancel=cancel,
                         executor=parse_pool(),
+                        snapshot=snapshot,
                         **hooks,
                     )
                 )
@@ -341,6 +378,7 @@ class MainWindow(QMainWindow):
                     cancel=cancel,
                     executor=parse_pool(),
                     unitids=unitids,
+                    snapshot=snapshot,
                     **hooks,
                 )
             )
