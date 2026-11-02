@@ -67,6 +67,7 @@ def window(qtbot, monkeypatch):
 
     async def fake_run_search(registry, **kw):
         window.search_calls.append(kw["states"])
+        window.snapshots.append(kw.get("snapshot"))
         return RunResult(records=sample_records(), searched_states=kw["states"])
 
     monkeypatch.setattr(mw, "run_all", fake_run_all)
@@ -74,6 +75,7 @@ def window(qtbot, monkeypatch):
     monkeypatch.setattr(mw, "parse_pool", lambda: None)
     w = mw.MainWindow(load_remote_registry=False)
     w.search_calls = []
+    w.snapshots = []
     window = w
     qtbot.addWidget(w)
     return w
@@ -365,3 +367,30 @@ def test_net_price_filter_and_sort(qtbot):
     assert [r.record.name for r in table.visible_rows()] == ["Cheap", "Mid", "Unknown"]
     table.proxy.set_filters(net_price={"$25,000–$40,000"})
     assert [r.record.name for r in table.visible_rows()] == ["Mid"]
+
+
+def test_searches_use_the_weekly_file_and_refresh_reads_live(qtbot, window, monkeypatch):
+    from datetime import UTC, datetime
+
+    from cfa.snapshot import Snapshot, SnapshotLoad
+
+    seen = []
+
+    async def fake_run_all(registry, **kw):
+        seen.append(kw.get("snapshot"))
+        return RunResult(records=sample_records()[:1])
+
+    monkeypatch.setattr(mw, "run_all", fake_run_all)
+    snap = Snapshot(datetime(2026, 11, 1, 12, tzinfo=UTC), {}, [])
+    window.set_snapshot(SnapshotLoad(snap))
+    assert "Data as of Nov 1" in window.registry_label.text()
+    window.student.submits.setChecked(False)
+    window.run_match()
+    qtbot.waitUntil(lambda: window.worker is None, timeout=10000)
+    assert window.snapshots == [snap]
+    window.run_match([1])  # Refresh live on one school
+    qtbot.waitUntil(lambda: window.worker is None, timeout=10000)
+    assert seen == [None]
+    window.set_snapshot(SnapshotLoad(None, "The weekly data file is out of date; searches use live data."))
+    assert "Data as of" not in window.registry_label.text()
+    assert "out of date" in window.registry_label.toolTip()

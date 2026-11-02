@@ -369,3 +369,12 @@ A per-school free-text and tags field (e.g., "political lean: left-leaning per c
   merit aid for students without need) because Scorecard has none and IPEDS grant data in the Urban
   API ends in 2021. Shown on cards, in a "Cost and aid" detail section, as a net-price sort and filter,
   and in CSV export.
+- v1.7 (2026-11-02, stakeholder feedback "too slow"): **weekly data file.** R2 is relaxed with the
+  owner's approval: `.github/workflows/data-snapshot.yml` runs `cfa.tools.build_snapshot` every
+  Sunday, fetching IPEDS and Scorecard for every four-year college and reading every curated CDS the
+  same way a live search does, and publishes `snapshot.json.gz` (each source's raw results with
+  source, year and status) to the `data` branch of the public registry repo. The app downloads it at
+  startup (memory only, still nothing on disk) and answers searches from it: a Pennsylvania search
+  went from about a minute to 0.2 s. Live fetching remains for anything the file lacks (a failed
+  source that week, a school added to the registry or a CDS URL changed since the build), when the
+  file is missing or older than 30 days, and for **Refresh live** on a single school.

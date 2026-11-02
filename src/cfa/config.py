@@ -22,6 +22,12 @@ USER_AGENT = f"{APP_NAME}/{__version__} (+{REPO_URL})"
 # .github/workflows/registry-sync.yml. Edit registry/schools.yaml here, never there.
 REGISTRY_REMOTE_URL = "https://raw.githubusercontent.com/mpromisel002/mpromisel002-CollegeIQDashboard-registry/main/schools.yaml"
 
+# --- Weekly data file -------------------------------------------------------------
+# Built by .github/workflows/data-snapshot.yml from the same official sources the app reads live,
+# and published to the public registry repo's "data" branch. Older than this many days => live data.
+SNAPSHOT_URL = "https://raw.githubusercontent.com/mpromisel002/mpromisel002-CollegeIQDashboard-registry/data/snapshot.json.gz"
+SNAPSHOT_MAX_AGE_DAYS = 30
+
 # --- HTTP (PLAN §5.1 rule 2) --------------------------------------------------
 CONNECT_TIMEOUT_S = 10.0
 READ_TIMEOUT_S = 30.0

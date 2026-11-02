@@ -1,6 +1,8 @@
 """Fetch schools from all sources and merge into CollegeRecords.
 
 run_all: the curated registry, school by school. run_search: every four-year college in some states.
+Both answer from the weekly data file (cfa.snapshot) when one is given, and from the live sources
+for anything the file lacks.
 
 Runs inside one asyncio event loop (a worker thread's asyncio.run); never on the Qt main thread.
 """
@@ -20,6 +22,7 @@ from cfa import config
 from cfa.aggregate import merge
 from cfa.models.college import CollegeRecord
 from cfa.models.field_value import Status
+from cfa.snapshot import FromSnapshot, Snapshot
 from cfa.sources.base import FetchResult, SourceAdapter
 from cfa.sources.cds.adapter import SOURCE as CDS_SOURCE
 from cfa.sources.cds.adapter import CdsAdapter
@@ -132,17 +135,19 @@ async def _fetch_many(
 
     Two phases: every school from the fast sources first, then the Common Data Sets (seconds each to
     read). on_partial gets the records after phase one, with "still loading" CDS fields, so results
-    can be shown straight away; on_update gets each record again once its CDS is in.
+    can be shown straight away; on_update gets each record again once its CDS is in. A CDS the
+    weekly data file already holds is not read again, so it counts as fast.
     """
     fast: dict[int, list[FetchResult]] = {}
-    slow = [s for s in schools if cds is not None and s[2].get("cds")]
+    stored = cds.has if isinstance(cds, FromSnapshot) else (lambda _u: False)
+    slow = [s for s in schools if cds is not None and s[2].get("cds") and not stored(s[0])]
     slow_ids = {s[0] for s in slow}
     loading = FetchResult(CDS_SOURCE, Status.NOT_REPORTED, note=CDS_LOADING)
 
     async def phase_one(unitid: int, name: str, links: dict[str, str]) -> CollegeRecord:
         results = list(await asyncio.gather(*(a.fetch(unitid) for a in adapters)))
         if cds is not None and unitid not in slow_ids:
-            results.append(await cds.fetch(unitid))  # instant: no document listed
+            results.append(await cds.fetch(unitid))  # instant: none listed, or in the data file
         fast[unitid] = results
         return merge(unitid, name, results + ([loading] if unitid in slow_ids else []), links)
 
@@ -201,6 +206,7 @@ async def run_all(
     on_partial: RecordsFn | None = None,
     on_update: RecordFn | None = None,
     unitids: list[int] | None = None,
+    snapshot: Snapshot | None = None,
 ) -> RunResult:
     """The curated list only (or just `unitids`): every source, school by school."""
     schools = [s for s in registry.schools if unitids is None or s.unitid in unitids]
@@ -210,11 +216,7 @@ async def run_all(
     if own_http:
         await client.__aenter__()
     try:
-        adapters: list[SourceAdapter] = [
-            UrbanIpedsAdapter(client),
-            ScorecardAdapter(client, api_key),
-            CdsAdapter(client, registry, executor=executor),
-        ]
+        adapters = _adapters(client, registry, api_key, executor, snapshot)
         items = [(s.unitid, s.name, school_links(s)) for s in schools]
         listed = {s.unitid for s in registry.schools}
         # A school found by run_search (not on the list) can be retried too; IPEDS supplies its name.
@@ -246,11 +248,13 @@ async def run_search(
     executor: Executor | None = None,
     on_partial: RecordsFn | None = None,
     on_update: RecordFn | None = None,
+    snapshot: Snapshot | None = None,
 ) -> RunResult:
     """Every four-year college in `states` (all states if empty), not only the curated list.
 
     IPEDS and Scorecard are loaded in bulk (a few requests per state); the curated schools also get
     their Common Data Set. If IPEDS cannot list the colleges, falls back to the curated list.
+    With the weekly data file the colleges come from the file and nothing is loaded in bulk.
     """
     fips = [STATE_FIPS[s] for s in (states or []) if s in STATE_FIPS] or None
     out = RunResult()
@@ -259,6 +263,22 @@ async def run_search(
     if own_http:
         await client.__aenter__()
     try:
+        valid = [s for s in (states or []) if s in STATE_FIPS]
+        if snapshot is not None and snapshot.covers(valid):
+            await _search_snapshot(
+                snapshot,
+                registry,
+                states=valid,
+                api_key=api_key,
+                client=client,
+                executor=executor,
+                out=out,
+                progress=progress,
+                cancel=cancel,
+                on_partial=on_partial,
+                on_update=on_update,
+            )
+            return out
         urban = UrbanIpedsAdapter(client)
         scorecard = ScorecardAdapter(client, api_key)
         cds = CdsAdapter(client, registry, executor=executor)
@@ -298,11 +318,8 @@ async def run_search(
             return curated
 
         in_scope = {r["unitid"]: r for r in urban.directory_rows if isinstance(r.get("unitid"), int)}
-        picked = [uid for uid, row in in_scope.items() if is_candidate_college(row)]
+        picked = pick_colleges(urban.directory_rows, registry, everywhere=fips is None)
         listed = {s.unitid: s for s in registry.schools}
-        for uid in listed:  # curated schools always count, even if IPEDS classifies them oddly
-            if uid not in picked and (uid in in_scope or fips is None):
-                picked.append(uid)
         n_steps += (len(picked) + 99) // 100 if api_key else 0
         await scorecard.prefetch(picked, progress=tick)
         if cancel is not None and cancel.is_set():
@@ -333,6 +350,100 @@ async def run_search(
         if own_http:
             await client.__aexit__(None, None, None)
     return out
+
+
+def pick_colleges(directory_rows: list[dict[str, Any]], registry: Registry, *, everywhere: bool) -> list[int]:
+    """The colleges a search lists: four-year colleges in the IPEDS rows, plus the curated schools.
+
+    Curated schools always count, even if IPEDS classifies them oddly; when the rows cover only some
+    states (`everywhere` False), only those found in the rows.
+    """
+    in_scope = {r["unitid"]: r for r in directory_rows if isinstance(r.get("unitid"), int)}
+    picked = [uid for uid, row in in_scope.items() if is_candidate_college(row)]
+    chosen = set(picked)
+    for s in registry.schools:
+        if s.unitid not in chosen and (s.unitid in in_scope or everywhere):
+            picked.append(s.unitid)
+            chosen.add(s.unitid)
+    return picked
+
+
+def _adapters(
+    client: HttpClient,
+    registry: Registry,
+    api_key: str | None,
+    executor: Executor | None,
+    snapshot: Snapshot | None,
+) -> list[SourceAdapter]:
+    """IPEDS, Scorecard and CDS; each answers from the weekly data file first when there is one."""
+    urban = UrbanIpedsAdapter(client)
+    scorecard = ScorecardAdapter(client, api_key)
+    cds = CdsAdapter(client, registry, executor=executor)
+    if snapshot is None:
+        return [urban, scorecard, cds]
+    return [
+        FromSnapshot(urban, snapshot),
+        # A file built without a Scorecard key holds no Scorecard data; ask live (if there is a key).
+        FromSnapshot(scorecard, snapshot) if snapshot.has_source(scorecard.name) else scorecard,
+        FromSnapshot(cds, snapshot, registry),
+    ]
+
+
+async def _search_snapshot(
+    snapshot: Snapshot,
+    registry: Registry,
+    *,
+    states: list[str],
+    api_key: str | None,
+    client: HttpClient,
+    executor: Executor | None,
+    out: RunResult,
+    progress: ProgressFn | None,
+    cancel: threading.Event | None,
+    on_partial: RecordsFn | None,
+    on_update: RecordFn | None,
+) -> None:
+    wanted = set(states)
+    listed = {s.unitid: s for s in registry.schools}
+    picked = [
+        uid
+        for uid, s in snapshot.schools.items()
+        if (s.candidate or uid in listed) and (not wanted or s.state in wanted)
+    ]
+    urban, scorecard, cds = _adapters(client, registry, api_key, executor, snapshot)
+    # Schools added to the curated list since the file was built: their state comes from IPEDS.
+    # (A file of only some states lacks most curated schools; it is for testing, so skip this.)
+    added = [uid for uid in listed if uid not in snapshot.schools] if not snapshot.states else []
+    if added:
+        found = await asyncio.gather(*(urban.fetch(uid) for uid in added))
+        for uid, res in zip(added, found, strict=True):
+            state = res.data.get("state")
+            if not wanted or (state is not None and state.value in wanted):
+                picked.append(uid)
+    if isinstance(scorecard, ScorecardAdapter):  # not in the file: load it in bulk, as a live search
+        await scorecard.prefetch(picked)
+
+    def name_of(uid: int) -> str:
+        if uid in listed:
+            return listed[uid].name
+        stored = snapshot.schools.get(uid)
+        return stored.name if stored else f"UnitID {uid}"
+
+    items = [
+        (uid, name_of(uid), school_links(listed[uid]) if uid in listed else {})
+        for uid in sorted(picked, key=lambda u: name_of(u).lower())
+    ]
+    out.searched_states = list(states)
+    await _fetch_many(
+        items,
+        [urban, scorecard],
+        out,
+        progress,
+        cancel,
+        cds=cds,
+        on_partial=on_partial,
+        on_update=on_update,
+    )
 
 
 async def health_checks(registry: Registry, api_key: str | None) -> dict[str, FetchResult]:

@@ -20,8 +20,11 @@ figures.
 
 ![screenshot](docs/screenshot.png)
 
-**No college data ships with the app.** Everything is fetched live from official sources and held in
-memory for the session only:
+**No college data ships with the app.** All of it comes from official sources. To keep searches fast
+(under a second instead of minutes), a weekly GitHub workflow fetches every source once and publishes
+the results as one data file; the app downloads it at startup and keeps it in memory only. Each value
+keeps its source and year. If the file is missing or more than 30 days old, the app fetches live, and
+**View details → Refresh live** re-reads any school from the sources.
 
 | Source | Used for |
 |---|---|
@@ -52,6 +55,7 @@ pytest                                               # offline: recorded fixture
 ruff check src tests && mypy src
 python -m cfa.tools.validate_registry                # check every registry link + parse
 python -m cfa.tools.find_cds list --states PA --out todo.json   # propose new registry entries
+python -m cfa.tools.build_snapshot --out snapshot.json.gz       # the weekly data file (minutes)
 python -m cfa.tools.live_smoke --baseline docs/coverage_baseline.json   # real sources
 pyinstaller packaging/cfa.spec --noconfirm           # build dist/CollegeFitAdvisor/
 ```
@@ -69,7 +73,9 @@ src/cfa/            app.py, config.py, pipeline.py, aggregate.py, cache.py
   sources/cds/      fetch, PDF/XLSX → layout rows, section extractors (B22, C1 … F1, H2)
   scoring/          academic (tiers), culture (0-100)
   ui/               PySide6 window, results table, detail view, charts, settings
-  tools/            validate_registry, live_smoke, find_cds (finds CDS files on a college's own site)
+  snapshot.py       the weekly data file: format, download, answering searches from it
+  tools/            validate_registry, live_smoke, find_cds (finds CDS files on a college's own site),
+                    build_snapshot (builds the weekly data file)
 registry/schools.yaml   pointers only (UnitIDs + CDS URLs); mirrored to the public
                         mpromisel002-CollegeIQDashboard-registry repo the app reads (see docs/ADDING_SCHOOLS.md)
 tests/              unit, adapters (respx), parsers (real CDS samples), ui (pytest-qt)
@@ -81,6 +87,10 @@ Push a tag `v*` (for example `v0.1.0`). `.github/workflows/release.yml` runs the
 `windows-latest`, builds with PyInstaller, smoke-launches the exe with `--self-test`, and attaches
 `CollegeFitAdvisor-win64.zip` to the GitHub Release. Every CI run on a PR also uploads the zip as a
 build artifact.
+
+`.github/workflows/data-snapshot.yml` rebuilds the weekly data file every Sunday and publishes it to
+the `data` branch of the public registry repo (it needs the `SCORECARD_API_KEY` and
+`REGISTRY_SYNC_TOKEN` secrets). A failed build opens an issue; the app keeps using the previous file.
 
 `.github/workflows/live-smoke.yml` runs weekly against the real sources and opens an issue when a
 source health check fails, a registry link breaks, or coverage drops more than 10 % below

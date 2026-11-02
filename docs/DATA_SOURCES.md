@@ -156,3 +156,18 @@ The PDF page pre-scan keeps part H's own pages; schools whose CDS has no part H 
 
 Niche, Peterson's, College Board BigFuture and College Transitions are never fetched. Buttons open
 the registry's link if one is set, otherwise a web search limited to that site, in the system browser.
+
+## Weekly data file
+
+`python -m cfa.tools.build_snapshot` (run every Sunday by `.github/workflows/data-snapshot.yml`)
+calls the three adapters above for every four-year college and every curated school, exactly as a
+live search does, and writes each adapter's own result (every field with its value, source, year,
+status and note) to `snapshot.json.gz`. It is published to the `data` branch of the public registry
+repo and read from `config.SNAPSHOT_URL`. A whole-country file is a few hundred KB.
+
+- Results that failed for a passing reason (source unavailable, rate limited, no key) are left out,
+  so the app asks for them live instead of repeating last week's failure.
+- A curated school's CDS result is used only if it was read from the URL the registry lists now.
+- The build fails, and nothing is published, if IPEDS cannot list the colleges, fewer than 1,200 are
+  found, or College Scorecard does not answer.
+- The app ignores a file older than `SNAPSHOT_MAX_AGE_DAYS` (30) and fetches live.

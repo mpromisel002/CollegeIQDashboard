@@ -27,17 +27,16 @@ fallbacks come from IPEDS instead. **Test connections** shows each source's heal
 3. Choose what to **Search** (above Run Match):
    - **All four-year colleges** (default): every active public or private nonprofit college that
      mainly awards bachelor's degrees in the preferred states — or the whole country if no states
-     are set or "Only show schools in these states" is unticked. Data comes live from IPEDS and, with
-     a key, College Scorecard. Schools on the curated list also get their Common Data Set and show a
+     are set or "Only show schools in these states" is unticked. Data comes from IPEDS and College
+     Scorecard (see **Where the data comes from** below). Schools on the curated list also get their Common Data Set and show a
      **Full data** badge; the rest show **Federal data only** (no GPA spread, Greek life or ED/EA
      numbers, because those exist only in a school's CDS).
    - **Curated list only (full data)**: just the schools in the registry, all with their CDS.
-4. **Run Match** (progress bar; **Cancel** stops early). A few states take under a minute; the whole
-   country (about 1,700 colleges) takes a few minutes because IPEDS is slow to answer some tables.
+4. **Run Match** (progress bar; **Cancel** stops early). With the weekly data file (the header shows
+   **Data as of …**) results appear in about a second, even for the whole country. Without it the app
+   fetches live: a few states take under a minute, the whole country a few minutes, and schools on
+   the curated list show **Reading full data…** until their Common Data Set is read.
    If you add a state after a search, the header says it wasn't searched yet; run the match again.
-   Results appear as soon as the federal data is in. Schools on the curated list show **Reading full
-   data…** while their Common Data Set is read (a few seconds each), then switch to **Full data** and
-   their tier and culture score update in place.
 5. Results appear as **Cards**, 20 per page: tier, public/private, selectivity, setting and Greek-life badges, key
    stats, and why the school got its tier and culture score. Switch to **Table** for a compact,
    column-sortable list. **Sort by** offers best match (Safety → Target → Reach, best culture fit
@@ -52,6 +51,19 @@ fallbacks come from IPEDS instead. **Test connections** shows each source's heal
 Profiles are saved/loaded as JSON files wherever you choose (**Profile** menu, top right). Results can
 be exported to CSV or PDF on demand (**Export** menu); exports contain only the schools currently
 shown.
+
+## Where the data comes from
+
+Every value comes from IPEDS, College Scorecard or the school's own Common Data Set, and its badge
+says which source and year. To make searches fast, the app downloads a **weekly data file** at
+startup: a copy of those same sources, fetched every Sunday by the project's GitHub workflow. The
+header shows its date (**Data as of …**). Nothing is written to your computer.
+
+- **View details → Refresh live** fetches that one school again straight from the sources.
+- A Common Data Set added or replaced on the curated list since the last weekly build is read live.
+- If the file can't be downloaded or is more than 30 days old, every search fetches live (slower).
+- College Scorecard figures (net price, cost of attendance) are in the weekly file, so they show
+  even without your own Scorecard key; a key is only needed for live fetches.
 
 ## Cost and scholarships
 
